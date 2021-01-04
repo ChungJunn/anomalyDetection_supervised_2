@@ -4,7 +4,7 @@ import torch
 
 # create annotation and adjacency matrices and dataloader
 class ad_gnn_iterator:
-    def __init__(self, tvt, data_dir, csv_files, direction, recur_w):
+    def __init__(self, tvt, data_dir, csv_files):
         ## replace with add tvt to the dataset paths
         csv_paths=[]
 
@@ -28,8 +28,6 @@ class ad_gnn_iterator:
 
         # initialize the variables
         self.n_nodes = len(self.node_features)
-        self.direction = direction
-        self.recur_w = recur_w
 
     def make_annotation_matrix(self, idx):
         # initialize the matrix
@@ -41,28 +39,6 @@ class ad_gnn_iterator:
                 annotation[ni,fi] = (self.node_features[ni])[idx, fi]
 
         return annotation
-
-    def make_adj_matrix(self, idx, direction='forward', recur_w=0.7):
-        # initialize the matrix
-        A_in = np.zeros([self.n_nodes, self.n_nodes])
-        A_out = np.zeros([self.n_nodes, self.n_nodes])
-
-        n_edges = 1.0 if direction=='forward' else 2.0
-        edge_weight = (1 - recur_w) / n_edges
-
-        import math # retrieve the related data using idx
-        for from_node in range(self.n_nodes): # no edge feature for last node
-            A_in[from_node, from_node] = recur_w
-
-            if from_node < (self.n_nodes - 1):
-                A_in[from_node, from_node + 1] = edge_weight
-
-            if direction == 'bi-direction' and from_node > 0:
-                A_in[from_node, from_node - 1] = edge_weight
-
-        A_out += A_in
-
-        return A_in, A_out
 
     def reset(self):
         self.idx = 0
@@ -76,19 +52,14 @@ class ad_gnn_iterator:
             self.reset()
 
         annotation = self.make_annotation_matrix(self.idx)
-        A_in, A_out = self.make_adj_matrix(self.idx, direction=self.direction,recur_w=self.recur_w)
-
         label = self.label[self.idx]
 
         self.idx += 1
 
         annotation = torch.tensor(annotation)
-
-        A_in = torch.tensor(A_in)
-        A_out = torch.tensor(A_out)
         label = torch.tensor(label)
 
-        return annotation, A_in, A_out, label, end_of_data
+        return annotation, label, end_of_data
 
     def __iter__(self):
         return self
@@ -97,7 +68,6 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--direction', type=str, help='', default='forward')
     parser.add_argument('--n_nodes', type=int)
     parser.add_argument('--csv1', type=str)
     parser.add_argument('--csv2', type=str)
@@ -106,7 +76,6 @@ if __name__ == '__main__':
     parser.add_argument('--csv5', type=str)
     parser.add_argument('--csv_label', type=str)
     parser.add_argument('--data_dir', type=str)
-    parser.add_argument('--recur_w', type=float)
     args = parser.parse_args()
 
     csv_files=[]
@@ -115,9 +84,9 @@ if __name__ == '__main__':
         csv_files.append(csv_file)
     csv_files.append(args.csv_label)
 
-    iter = ad_gnn_iterator(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction, recur_w=args.recur_w)
+    iter = ad_gnn_iterator(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files)
 
-    for iloop, (anno, A_out, A_in, label, end_of_data) in enumerate(iter):
-        print(iloop, anno.shape, A_out.shape, A_in.shape, label.shape)
+    for iloop, (anno, label, end_of_data) in enumerate(iter):
+        print(iloop, anno.shape, label.shape)
         print(label)
         import pdb; pdb.set_trace()

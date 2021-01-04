@@ -1,7 +1,5 @@
 #!/bin/bash
 DATASET='cnsm_exp1' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
-DIRECTION='forward' #'bi-direction'
-RECUR_W=0.5
 
 # check dataset and set csv paths
 DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
@@ -26,8 +24,7 @@ else
     N_NODES=4
 fi
 
-    python3 ad_data.py  --direction=$DIRECTION \
-                        --data_dir=$DATA_DIR \
+    python3 ad_data.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
                         --csv3=$CSV3 \
@@ -35,4 +32,3 @@ fi
                         --csv5=$CSV5 \
                         --csv_label=$CSV_LABEL \
                         --n_nodes=$N_NODES \
-                        --recur_w=$RECUR_W
