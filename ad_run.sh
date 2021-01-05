@@ -1,5 +1,10 @@
 #!/bin/bash
-DATASET='cnsm_exp1' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+EXP_NAME='21.01.05.exp1'
+DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+REDUCE=$3
+OPTIMIZER=$4
+LR=$5
+PATIENCE=5
 
 # check dataset and set csv paths
 DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
@@ -24,7 +29,11 @@ else
     N_NODES=4
 fi
 
-    python3 ad_data.py  --data_dir=$DATA_DIR \
+export CUDA_VISIBLE_DEVICES=$1
+
+for i in 1 2 3
+do
+    python3 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
                         --csv3=$CSV3 \
@@ -32,3 +41,9 @@ fi
                         --csv5=$CSV5 \
                         --csv_label=$CSV_LABEL \
                         --n_nodes=$N_NODES \
+                        --reduce=$REDUCE \
+                        --optimizer=$OPTIMIZER \
+                        --lr=$LR \
+                        --patience=$PATIENCE \
+                        --exp_name=$EXP_NAME
+done

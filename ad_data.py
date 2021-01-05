@@ -3,7 +3,7 @@ import numpy as np
 import torch
 
 # create annotation and adjacency matrices and dataloader
-class ad_gnn_iterator:
+class AD_SUP2_ITERATOR:
     def __init__(self, tvt, data_dir, csv_files):
         ## replace with add tvt to the dataset paths
         csv_paths=[]
@@ -56,8 +56,8 @@ class ad_gnn_iterator:
 
         self.idx += 1
 
-        annotation = torch.tensor(annotation)
-        label = torch.tensor(label)
+        annotation = torch.tensor(annotation).type(torch.float32)
+        label = torch.tensor(label).type(torch.int64)
 
         return annotation, label, end_of_data
 
@@ -76,6 +76,7 @@ if __name__ == '__main__':
     parser.add_argument('--csv5', type=str)
     parser.add_argument('--csv_label', type=str)
     parser.add_argument('--data_dir', type=str)
+    parser.add_argument('--reduce', type=str)
     args = parser.parse_args()
 
     csv_files=[]
@@ -84,9 +85,15 @@ if __name__ == '__main__':
         csv_files.append(csv_file)
     csv_files.append(args.csv_label)
 
-    iter = ad_gnn_iterator(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files)
+    iter = AD_SUB2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files)
+
+    from ad_model import AD_SUP2_MODEL1
+
+    model = AD_SUP2_MODEL1(reduce=args.reduce)
+    print(model)
 
     for iloop, (anno, label, end_of_data) in enumerate(iter):
         print(iloop, anno.shape, label.shape)
         print(label)
-        import pdb; pdb.set_trace()
+
+        logits = model(anno)

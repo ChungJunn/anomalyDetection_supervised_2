@@ -17,21 +17,18 @@ import time
 import argparse
 import neptune
 
-from ad_eval import eval_main
-from ad_model import gnn_binary_classifier
-from ad_data import ad_gnn_iterator
+from ad_model import AD_SUP2_MODEL1
+from ad_data import AD_SUP2_ITERATOR
 
 def validate(model, validiter, device, criterion):
     valid_loss = 0.0
 
-    for li, (anno, A_in, A_out, label, end_of_data) in enumerate(validiter):
+    for li, (anno, label, end_of_data) in enumerate(validiter):
         anno = anno.to(dtype=torch.float32, device=device)
-        A_in = A_in.to(dtype=torch.float32, device=device)
-        A_out = A_out.to(dtype=torch.float32, device=device)
         label = label.to(dtype=torch.int64, device=device)
 
         # go through loss function
-        output = model(A_in, A_out, anno)
+        output = model(anno)
         loss = criterion(output, label)
 
         # compute loss
@@ -47,7 +44,7 @@ def train_main(args, neptune):
     criterion = F.nll_loss
 
     # declare model
-    model = gnn_binary_classifier(args).to(device)
+    model = AD_SUP2_MODEL1(reduce=args.reduce).to(device)
 
     csv_files=[]
     for n in range(1, args.n_nodes+1):
@@ -56,9 +53,9 @@ def train_main(args, neptune):
     csv_files.append(args.csv_label) # append label 
 
     # declare dataset
-    trainiter = ad_gnn_iterator(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction, recur_w=args.recur_w)
-    valiter = ad_gnn_iterator(tvt='sup_val', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction, recur_w=args.recur_w)
-    testiter = ad_gnn_iterator(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction, recur_w=args.recur_w)
+    trainiter = AD_SUP2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files)
+    valiter = AD_SUP2_ITERATOR(tvt='sup_val', data_dir=args.data_dir, csv_files=csv_files)
+    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files)
 
     # declare optimizer
     estring = "optim." + args.optimizer
@@ -75,15 +72,13 @@ def train_main(args, neptune):
     n_samples = trainiter.n_samples
 
     for ei in range(1000):
-        for li, (anno, A_in, A_out, label, end_of_data) in enumerate(trainiter):
+        for li, (anno, label, end_of_data) in enumerate(trainiter):
             anno = anno.to(dtype=torch.float32, device=device)
-            A_in = A_in.to(dtype=torch.float32, device=device)
-            A_out = A_out.to(dtype=torch.float32, device=device)
             label = label.to(dtype=torch.int64, device=device)
         
             optimizer.zero_grad()
 
-            output = model(A_in, A_out, anno)
+            output = model(anno)
 
             # go through loss function
             loss = criterion(output, label)
@@ -133,15 +128,6 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str)
-    parser.add_argument('--patience', type=int)
-    parser.add_argument('--state_dim', type=int)
-    parser.add_argument('--hidden_dim', type=int)
-    parser.add_argument('--GRU_step', type=int)
-    parser.add_argument('--optimizer', type=str)
-    parser.add_argument('--lr', type=float)
-    parser.add_argument('--direction', type=str)
-    parser.add_argument('--reduce', type=str)
-    parser.add_argument('--dataset', type=str)
     parser.add_argument('--data_dir', type=str)
     parser.add_argument('--csv1', type=str)
     parser.add_argument('--csv2', type=str)
@@ -150,7 +136,10 @@ if __name__ == '__main__':
     parser.add_argument('--csv5', type=str)
     parser.add_argument('--csv_label', type=str)
     parser.add_argument('--n_nodes', type=int)
-    parser.add_argument('--recur_w', type=float)
+    parser.add_argument('--reduce', type=str)
+    parser.add_argument('--optimizer', type=str)
+    parser.add_argument('--lr', type=float)
+    parser.add_argument('--patience', type=float)
 
     args = parser.parse_args()
 
