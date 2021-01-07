@@ -141,6 +141,7 @@ if __name__ == '__main__':
     parser.add_argument('--optimizer', type=str)
     parser.add_argument('--lr', type=float)
     parser.add_argument('--patience', type=float)
+    parser.add_argument('--dataset', type=str)
 
     args = parser.parse_args()
 

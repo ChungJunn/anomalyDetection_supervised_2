@@ -46,4 +46,5 @@ do
                         --lr=$LR \
                         --patience=$PATIENCE \
                         --exp_name=$EXP_NAME
+                        --dataset=$EXP_NAME
 done
