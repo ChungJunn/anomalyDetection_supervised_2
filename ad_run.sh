@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='21.01.07.exp1'
+EXP_NAME='21.01.07.debug'
 DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 REDUCE=$3
 OPTIMIZER=$4
@@ -45,6 +45,6 @@ do
                         --optimizer=$OPTIMIZER \
                         --lr=$LR \
                         --patience=$PATIENCE \
-                        --exp_name=$EXP_NAME
-                        --dataset=$EXP_NAME
+                        --exp_name=$EXP_NAME \
+                        --dataset=$DATASET
 done
