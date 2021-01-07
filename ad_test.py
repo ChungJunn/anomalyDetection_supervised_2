@@ -21,7 +21,6 @@ if __name__ == '__main__':
     parser.add_argument('--csv4', type=str)
     parser.add_argument('--csv5', type=str)
     parser.add_argument('--csv_label', type=str)
-    parser.add_argument('--dataset' type=str)
 
     args = parser.parse_args()
     params = vars(args)
@@ -46,8 +45,8 @@ if __name__ == '__main__':
         csv_files.append(csv_file)
     csv_files.append(args.csv_label)
 
-    from ad_data import ad_gnn_iterator
-    testiter = ad_gnn_iterator(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files)
+    from ad_data import AD_SUP2_ITERATOR
+    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files)
 
     # evaluate the model and measure performance 
     acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=None)
