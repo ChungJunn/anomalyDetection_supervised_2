@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='21.01.05.exp1'
+EXP_NAME='21.01.07.exp1'
 DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 REDUCE=$3
 OPTIMIZER=$4

@@ -19,6 +19,7 @@ import neptune
 
 from ad_model import AD_SUP2_MODEL1
 from ad_data import AD_SUP2_ITERATOR
+from ad_eval import eval_main
 
 def validate(model, validiter, device, criterion):
     valid_loss = 0.0
