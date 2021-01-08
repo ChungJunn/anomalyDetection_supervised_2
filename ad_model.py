@@ -71,12 +71,14 @@ class AD_SUP2_MODEL2(nn.Module):
         self.pooling_layer=pooling_layer(reduce=reduce)
         self.classifier_layer=DNN_classifier()
 
-    def forward(self, annotation): 
+    def forward(self, x): 
         # reverse the order
-        x = annotation.unsqueeze(0)
-        x = torch.flip(x, (0,1))
         x = torch.transpose(x, 0, 1)
-        #print('reversed anno: ', x.shape)
+
+        # create inverted indices
+        idx = [i for i in range(x.size(0)-1, -1, -1)]
+        idx = torch.LongTensor(idx).to(x.get_device())
+        x = x.index_select(0, idx)
 
         # RNN layer
         x, hidden = self.lstm_layer(x, None)

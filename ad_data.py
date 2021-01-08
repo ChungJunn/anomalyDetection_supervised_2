@@ -4,7 +4,7 @@ import torch
 
 # create annotation and adjacency matrices and dataloader
 class AD_SUP2_ITERATOR:
-    def __init__(self, tvt, data_dir, csv_files):
+    def __init__(self, tvt, data_dir, csv_files, batch_size):
         ## replace with add tvt to the dataset paths
         csv_paths=[]
 
@@ -23,11 +23,15 @@ class AD_SUP2_ITERATOR:
         self.label = np.array(pd.read_csv(csv_paths[-1]))
 
         self.idx = 0
+        self.batch_size=batch_size
         self.n_samples = self.node_features[0].shape[0]
         self.n_node_features = self.node_features[0].shape[1]
 
         # initialize the variables
         self.n_nodes = len(self.node_features)
+    
+    def get_status(self):
+        print(self.idx, self.batch_size, self.n_samples, self.n_node_features)
 
     def make_annotation_matrix(self, idx):
         # initialize the matrix
@@ -45,21 +49,28 @@ class AD_SUP2_ITERATOR:
         return
 
     def __next__(self):
+        x_data = np.zeros((self.batch_size, self.n_nodes, self.n_node_features))
+        y_data = np.zeros((self.batch_size,))
         end_of_data=0
 
-        if self.idx >= (self.n_samples - 1):
-            end_of_data=1
-            self.reset()
+        # b_size
+        del_i=0
+        for bi in range(self.batch_size):
+            if self.idx+bi >= (self.n_samples - 1):
+                end_of_data=1
+                self.reset()
+                del_i=0
 
-        annotation = self.make_annotation_matrix(self.idx)
-        label = self.label[self.idx]
+            x_data[bi, :, :] = self.make_annotation_matrix(self.idx+bi)
+            y_data[bi] = self.label[self.idx+bi]
+            del_i+=1
 
-        self.idx += 1
+        self.idx += del_i
 
-        annotation = torch.tensor(annotation).type(torch.float32)
-        label = torch.tensor(label).type(torch.int64)
-
-        return annotation, label, end_of_data
+        x_data = torch.tensor(x_data).type(torch.float32)
+        y_data = torch.tensor(y_data).type(torch.int64)
+        
+        return x_data, y_data, end_of_data
 
     def __iter__(self):
         return self
@@ -77,6 +88,7 @@ if __name__ == '__main__':
     parser.add_argument('--csv_label', type=str)
     parser.add_argument('--data_dir', type=str)
     parser.add_argument('--reduce', type=str)
+    parser.add_argument('--batch_size', type=int)
     args = parser.parse_args()
 
     csv_files=[]
@@ -85,16 +97,20 @@ if __name__ == '__main__':
         csv_files.append(csv_file)
     csv_files.append(args.csv_label)
 
-    iter = AD_SUP2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files)
+    iter = AD_SUP2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files, batch_size=args.batch_size)
 
     from ad_model import AD_SUP2_MODEL2
 
     model = AD_SUP2_MODEL2(dim_lstm_input=22, dim_lstm_hidden=22, reduce=args.reduce)
     print('model setup: ', model)
 
+    print('iterator setup: ', iter.get_status())
     for iloop, (anno, label, end_of_data) in enumerate(iter):
-        print('from iterator: ', anno.shape, label.shape)
+        import pdb; pdb.set_trace()
+        
+        #print('from iterator: ', anno.shape, label.shape)
 
         logits = model(anno)
-    
+        if end_of_data==1: break
 
+    print('iter status: ', iter.get_status())

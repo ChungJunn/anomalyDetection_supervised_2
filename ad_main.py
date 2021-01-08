@@ -57,9 +57,9 @@ def train_main(args, neptune):
     csv_files.append(args.csv_label) # append label 
 
     # declare dataset
-    trainiter = AD_SUP2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files)
-    valiter = AD_SUP2_ITERATOR(tvt='sup_val', data_dir=args.data_dir, csv_files=csv_files)
-    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files)
+    trainiter = AD_SUP2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files, batch_size=args.batch_size)
+    valiter = AD_SUP2_ITERATOR(tvt='sup_val', data_dir=args.data_dir, csv_files=csv_files, batch_size=args.batch_size)
+    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files, batch_size=args.batch_size)
 
     # declare optimizer
     estring = "optim." + args.optimizer
@@ -147,6 +147,7 @@ if __name__ == '__main__':
     parser.add_argument('--patience', type=float)
     parser.add_argument('--dataset', type=str)
     parser.add_argument('--max_epoch', type=int)
+    parser.add_argument('--batch_size', type=int)
 
     args = parser.parse_args()
 

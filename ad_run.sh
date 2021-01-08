@@ -6,6 +6,7 @@ OPTIMIZER='Adam'
 LR=0.001
 PATIENCE=5
 MAX_EPOCH=1
+BATCH_SIZE=64
 
 # check dataset and set csv paths
 DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
@@ -48,5 +49,6 @@ export CUDA_VISIBLE_DEVICES=$1
                         --patience=$PATIENCE \
                         --exp_name=$EXP_NAME \
                         --dataset=$DATASET \
-                        --max_epoch=$MAX_EPOCH
+                        --max_epoch=$MAX_EPOCH \
+                        --batch_size=$BATCH_SIZE
 #done

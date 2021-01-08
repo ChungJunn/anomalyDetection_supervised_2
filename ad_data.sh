@@ -1,6 +1,7 @@
 #!/bin/bash
-DATASET='cnsm_exp1' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 REDUCE='max'
+BATCH_SIZE=64
 
 # check dataset and set csv paths
 DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
@@ -34,3 +35,4 @@ python3 ad_data.py  --data_dir=$DATA_DIR \
                     --csv_label=$CSV_LABEL \
                     --n_nodes=$N_NODES \
                     --reduce=$REDUCE \
+                    --batch_size=$BATCH_SIZE \
