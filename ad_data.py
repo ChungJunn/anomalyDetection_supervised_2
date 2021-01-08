@@ -80,20 +80,21 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     csv_files=[]
-    for n in range(1, args.n_nodes+1):
+    for n in range(1, args.n_nodes + 1):
         csv_file = eval('args.csv' + str(n))
         csv_files.append(csv_file)
     csv_files.append(args.csv_label)
 
-    iter = AD_SUB2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files)
+    iter = AD_SUP2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files)
 
-    from ad_model import AD_SUP2_MODEL1
+    from ad_model import AD_SUP2_MODEL2
 
-    model = AD_SUP2_MODEL1(reduce=args.reduce)
-    print(model)
+    model = AD_SUP2_MODEL2(dim_lstm_input=22, dim_lstm_hidden=22, reduce=args.reduce)
+    print('model setup: ', model)
 
     for iloop, (anno, label, end_of_data) in enumerate(iter):
-        print(iloop, anno.shape, label.shape)
-        print(label)
+        print('from iterator: ', anno.shape, label.shape)
 
         logits = model(anno)
+    
+

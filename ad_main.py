@@ -18,6 +18,7 @@ import argparse
 import neptune
 
 from ad_model import AD_SUP2_MODEL1
+from ad_model import AD_SUP2_MODEL2
 from ad_data import AD_SUP2_ITERATOR
 from ad_eval import eval_main
 
@@ -45,7 +46,9 @@ def train_main(args, neptune):
     criterion = F.nll_loss
 
     # declare model
-    model = AD_SUP2_MODEL1(reduce=args.reduce).to(device)
+    # model = AD_SUP2_MODEL1(reduce=args.reduce).to(device)
+    model = AD_SUP2_MODEL2(dim_lstm_input=22, dim_lstm_hidden=22, reduce=args.reduce).to(device)
+    print('# model', model)
 
     csv_files=[]
     for n in range(1, args.n_nodes+1):
@@ -118,10 +121,11 @@ def train_main(args, neptune):
     model = torch.load(savedir)
     acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=neptune)
 
-    neptune.set_property('acc', acc)
-    neptune.set_property('prec', prec)
-    neptune.set_property('rec', rec)
-    neptune.set_property('f1', f1)
+    if neptune is not None:
+        neptune.set_property('acc', acc)
+        neptune.set_property('prec', prec)
+        neptune.set_property('rec', rec)
+        neptune.set_property('f1', f1)
 
     return
 
@@ -147,9 +151,11 @@ if __name__ == '__main__':
 
     params = vars(args)
 
-    neptune.init('cjlee/AnomalyDetection-GNN')
-    experiment = neptune.create_experiment(name=args.exp_name, params=params)
-    args.out_file = experiment.id + '.pth'
+    # neptune.init('cjlee/AnomalyDetection-GNN')
+    # experiment = neptune.create_experiment(name=args.exp_name, params=params)
+    # args.out_file = experiment.id + '.pth'
+    neptune = None
+    args.out_file = 'debug.pth'
 
     print('parameters:')
     print('='*90)

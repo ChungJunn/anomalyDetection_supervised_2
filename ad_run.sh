@@ -1,9 +1,9 @@
 #!/bin/bash
 EXP_NAME='21.01.07.debug'
-DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
-REDUCE=$3
-OPTIMIZER=$4
-LR=$5
+DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+REDUCE='mean'
+OPTIMIZER='Adam'
+LR=0.001
 PATIENCE=5
 
 # check dataset and set csv paths
@@ -31,8 +31,8 @@ fi
 
 export CUDA_VISIBLE_DEVICES=$1
 
-for i in 1 2 3
-do
+#for i in 1 2 3
+#do
     python3 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
@@ -47,4 +47,4 @@ do
                         --patience=$PATIENCE \
                         --exp_name=$EXP_NAME \
                         --dataset=$DATASET
-done
+#done

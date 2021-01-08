@@ -41,7 +41,66 @@ class AD_SUP2_MODEL1(nn.Module):
     def forward(self, annotation):
 
         encoded = self.encoder(annotation)
+
         logits = self.classifier(encoded)
 
         return logits
+
+class pooling_layer:
+    def __init__(self, reduce):
+        self.reduce = reduce
+
+    def __call__(self, annotation):
+        if self.reduce == 'max':
+            layer_out, _ = torch.max(annotation, dim=0, keepdim=True)
+        elif self.reduce == 'mean':
+            layer_out = torch.mean(annotation, dim=0, keepdim=True)
+        else:
+            print('reduce must be either \'max\' or \'mean\'')
+            import sys; sys.exit(-1)
+        return layer_out
+        
+#1. reverse
+#2. RNN layer
+#3. concatenation
+
+class AD_SUP2_MODEL2(nn.Module):
+    def __init__(self, dim_lstm_input, dim_lstm_hidden, reduce):
+        super(AD_SUP2_MODEL2, self).__init__()
+        self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden)
+        self.pooling_layer=pooling_layer(reduce=reduce)
+        self.classifier_layer=DNN_classifier()
+
+    def forward(self, annotation): 
+        # reverse the order
+        x = annotation.unsqueeze(0)
+        x = torch.flip(x, (0,1))
+        x = torch.transpose(x, 0, 1)
+        #print('reversed anno: ', x.shape)
+
+        # RNN layer
+        x, hidden = self.lstm_layer(x, None)
+        #print('lstm h: ', x.shape)
+        #print('lstm c: ', hidden[1].shape)
+
+        # pooling layer 
+        x = self.pooling_layer(x)
+        x = x.squeeze(0) # squeeze node-dimension
+        #print('pooling out: ', x.shape)
+
+        # classification layer
+        logits = self.classifier_layer(x)
+        #print('logits out: ', logits.shape)
+
+        return logits
+
+if __name__ == '__main__':
+    mylayer = pooling_layer(reduce='mean')
+
+    myvec = torch.tensor([[1,2,3,4],[1,5,2,3]]).type(torch.float32)
+
+    layer_out = mylayer(myvec)
+    
+    import pdb; pdb.set_trace()
+        
 
