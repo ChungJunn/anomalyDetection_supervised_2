@@ -1,10 +1,11 @@
 #!/bin/bash
-EXP_NAME='21.01.07.debug'
+EXP_NAME='21.01.08.debug'
 DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 REDUCE='mean'
 OPTIMIZER='Adam'
 LR=0.001
 PATIENCE=5
+MAX_EPOCH=1
 
 # check dataset and set csv paths
 DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
@@ -46,5 +47,6 @@ export CUDA_VISIBLE_DEVICES=$1
                         --lr=$LR \
                         --patience=$PATIENCE \
                         --exp_name=$EXP_NAME \
-                        --dataset=$DATASET
+                        --dataset=$DATASET \
+                        --max_epoch=$MAX_EPOCH
 #done

@@ -75,7 +75,7 @@ def train_main(args, neptune):
     savedir = './result/' + args.out_file
     n_samples = trainiter.n_samples
 
-    for ei in range(1000):
+    for ei in range(args.max_epoch):
         for li, (anno, label, end_of_data) in enumerate(trainiter):
             anno = anno.to(dtype=torch.float32, device=device)
             label = label.to(dtype=torch.int64, device=device)
@@ -146,6 +146,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float)
     parser.add_argument('--patience', type=float)
     parser.add_argument('--dataset', type=str)
+    parser.add_argument('--max_epoch', type=int)
 
     args = parser.parse_args()
 
