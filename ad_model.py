@@ -50,13 +50,16 @@ class pooling_layer:
     def __init__(self, reduce):
         self.reduce = reduce
 
-    def __call__(self, annotation):
+    def __call__(self, x):
         if self.reduce == 'max':
-            layer_out, _ = torch.max(annotation, dim=0, keepdim=True)
+            layer_out, _ = torch.max(x, dim=0, keepdim=True)
         elif self.reduce == 'mean':
-            layer_out = torch.mean(annotation, dim=0, keepdim=True)
+            layer_out = torch.mean(x, dim=0, keepdim=True)
+        elif self.reduce == 'last_hidden':
+            layer_out = x[-1,:,:]
+            layer_out = layer_out.unsqueeze(0)
         else:
-            print('reduce must be either \'max\' or \'mean\'')
+            print('reduce must be either \'max\' or \'mean\' or \'last_hidden\'')
             import sys; sys.exit(-1)
         return layer_out
         

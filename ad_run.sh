@@ -1,11 +1,11 @@
 #!/bin/bash
-EXP_NAME='21.01.08.debug'
-DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
-REDUCE='mean'
+EXP_NAME='21.01.09.debug'
+DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+REDUCE=$3 # mean, max, or last_hidden
 OPTIMIZER='Adam'
 LR=0.001
-PATIENCE=5
-MAX_EPOCH=1
+PATIENCE=20
+MAX_EPOCH=10000
 BATCH_SIZE=64
 
 # check dataset and set csv paths
@@ -33,8 +33,8 @@ fi
 
 export CUDA_VISIBLE_DEVICES=$1
 
-#for i in 1 2 3
-#do
+for i in 1 2 3
+do
     python3 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
@@ -51,4 +51,4 @@ export CUDA_VISIBLE_DEVICES=$1
                         --dataset=$DATASET \
                         --max_epoch=$MAX_EPOCH \
                         --batch_size=$BATCH_SIZE
-#done
+done

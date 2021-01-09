@@ -47,7 +47,7 @@ def train_main(args, neptune):
 
     # declare model
     # model = AD_SUP2_MODEL1(reduce=args.reduce).to(device)
-    model = AD_SUP2_MODEL2(dim_lstm_input=22, dim_lstm_hidden=22, reduce=args.reduce).to(device)
+    model = AD_SUP2_MODEL2(dim_lstm_input=args.dim_lstm_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce).to(device)
     print('# model', model)
 
     csv_files=[]
