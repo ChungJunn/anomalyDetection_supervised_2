@@ -1,7 +1,7 @@
 #!/bin/bash
-EXP_NAME='21.01.09.exp3'
-DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
-REDUCE='max' # mean, max, or last_hidden
+EXP_NAME='21.01.09.exp4'
+DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+REDUCE=$3 # mean, max, or last_hidden
 OPTIMIZER='Adam'
 LR=0.001
 PATIENCE=20
@@ -41,10 +41,10 @@ else
     N_NODES=4
 fi
 
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=$1
 
-#for i in 1 2 3
-#do
+for i in 1 2 3 4 5
+do
     python3 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
@@ -66,5 +66,5 @@ export CUDA_VISIBLE_DEVICES=0
                         --bidirectional=$BIDIRECTIONAL \
                         --d_model=$D_MODEL \
                         --nhead=$NHEAD \
-                        --dim_feedforward=$DIM_FEEDFORWARD \
-#done
+                        --dim_feedforward=$DIM_FEEDFORWARD
+done
