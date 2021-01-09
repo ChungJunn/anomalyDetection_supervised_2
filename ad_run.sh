@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='21.01.09.debug'
+EXP_NAME='21.01.09.exp3'
 DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 REDUCE=$3 # mean, max, or last_hidden
 OPTIMIZER='Adam'
