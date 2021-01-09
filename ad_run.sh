@@ -8,6 +8,7 @@ PATIENCE=20
 MAX_EPOCH=10000
 BATCH_SIZE=64
 
+BIDIRECTIONAL=1
 DIM_LSTM_HIDDEN=64
 DIM_LSTM_INPUT=22
 
@@ -55,5 +56,6 @@ do
                         --max_epoch=$MAX_EPOCH \
                         --batch_size=$BATCH_SIZE \
                         --dim_lstm_hidden=$DIM_LSTM_HIDDEN \
-                        --dim_lstm_input=$DIM_LSTM_INPUT
+                        --dim_lstm_input=$DIM_LSTM_INPUT \
+                        --bidirectional=$BIDIRECTIONAL
 done

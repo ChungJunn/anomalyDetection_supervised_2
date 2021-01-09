@@ -47,7 +47,7 @@ def train_main(args, neptune):
 
     # declare model
     # model = AD_SUP2_MODEL1(reduce=args.reduce).to(device)
-    model = AD_SUP2_MODEL2(dim_lstm_input=args.dim_lstm_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce).to(device)
+    model = AD_SUP2_MODEL2(dim_lstm_input=args.dim_lstm_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional).to(device)
     print('# model', model)
 
     csv_files=[]
@@ -150,7 +150,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--dim_lstm_input', type=int)
     parser.add_argument('--dim_lstm_hidden', type=int)
-
+    parser.add_argument('--bidirectional', type=int)
     args = parser.parse_args()
 
     params = vars(args)

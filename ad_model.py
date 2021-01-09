@@ -68,11 +68,17 @@ class pooling_layer:
 #3. concatenation
 
 class AD_SUP2_MODEL2(nn.Module):
-    def __init__(self, dim_lstm_input, dim_lstm_hidden, reduce):
+    def __init__(self, dim_lstm_input, dim_lstm_hidden, reduce, bidirectional):
         super(AD_SUP2_MODEL2, self).__init__()
-        self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden)
         self.pooling_layer=pooling_layer(reduce=reduce)
-        self.classifier_layer=DNN_classifier(dim_input=dim_lstm_hidden)
+        
+        if bidirectional == 1:
+            dim_input = dim_lstm_hidden*2
+            self.classifier_layer=DNN_classifier(dim_input=dim_input)
+            self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden, bidirectional=True)
+        else:
+            self.classifier_layer=DNN_classifier(dim_input=dim_lstm_hidden)
+            self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden, bidirectional=False)
 
     def forward(self, x): 
         # reverse the order
