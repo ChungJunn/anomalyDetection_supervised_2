@@ -62,10 +62,27 @@ class pooling_layer:
             print('reduce must be either \'max\' or \'mean\' or \'last_hidden\'')
             import sys; sys.exit(-1)
         return layer_out
-        
-#1. reverse
-#2. RNN layer
-#3. concatenation
+
+class AD_SUP2_MODEL3(nn.Module):
+    def __init__(self, d_model, nhead, dim_feedforward, reduce):
+        super(AD_SUP2_MODEL3, self).__init__()
+        self.pooling_layer=pooling_layer(reduce=reduce)
+        from torch.nn import TransformerEncoderLayer
+
+        self.t_layer = TransformerEncoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward)
+        self.classifier_layer = DNN_classifier(dim_input=d_model)
+
+    def forward(self, x):
+        x = torch.transpose(x, 0, 1)
+
+        x = self.t_layer(x)
+
+        x = self.pooling_layer(x)
+        x = x.squeeze(0)
+
+        logits = self.classifier_layer(x)
+
+        return logits
 
 class AD_SUP2_MODEL2(nn.Module):
     def __init__(self, dim_lstm_input, dim_lstm_hidden, reduce, bidirectional):
@@ -80,7 +97,7 @@ class AD_SUP2_MODEL2(nn.Module):
             self.classifier_layer=DNN_classifier(dim_input=dim_lstm_hidden)
             self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden, bidirectional=False)
 
-    def forward(self, x): 
+    def forward(self, x):
         # reverse the order
         x = torch.transpose(x, 0, 1)
 

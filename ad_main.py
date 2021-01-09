@@ -19,6 +19,7 @@ import neptune
 
 from ad_model import AD_SUP2_MODEL1
 from ad_model import AD_SUP2_MODEL2
+from ad_model import AD_SUP2_MODEL3
 from ad_data import AD_SUP2_ITERATOR
 from ad_eval import eval_main
 
@@ -47,7 +48,8 @@ def train_main(args, neptune):
 
     # declare model
     # model = AD_SUP2_MODEL1(reduce=args.reduce).to(device)
-    model = AD_SUP2_MODEL2(dim_lstm_input=args.dim_lstm_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional).to(device)
+    # model = AD_SUP2_MODEL2(dim_lstm_input=args.dim_lstm_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional).to(device)
+    model = AD_SUP2_MODEL3(d_model=args.d_model, nhead=args.nhead, dim_feedforward=args.dim_feedforward, reduce=args.reduce).to(device)
     print('# model', model)
 
     csv_files=[]
@@ -148,9 +150,15 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str)
     parser.add_argument('--max_epoch', type=int)
     parser.add_argument('--batch_size', type=int)
+    # RNN params
     parser.add_argument('--dim_lstm_input', type=int)
     parser.add_argument('--dim_lstm_hidden', type=int)
     parser.add_argument('--bidirectional', type=int)
+    # Transformer params 
+    parser.add_argument('--d_model', type=int)
+    parser.add_argument('--nhead', type=int)
+    parser.add_argument('--dim_feedforward', type=int)
+
     args = parser.parse_args()
 
     params = vars(args)

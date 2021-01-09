@@ -1,16 +1,22 @@
 #!/bin/bash
 EXP_NAME='21.01.09.exp3'
-DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
-REDUCE=$3 # mean, max, or last_hidden
+DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+REDUCE='max' # mean, max, or last_hidden
 OPTIMIZER='Adam'
 LR=0.001
 PATIENCE=20
-MAX_EPOCH=10000
+MAX_EPOCH=1000
 BATCH_SIZE=64
 
+# RNN params
 BIDIRECTIONAL=1
 DIM_LSTM_HIDDEN=64
 DIM_LSTM_INPUT=22
+
+# Transformer params
+D_MODEL=22
+NHEAD=2
+DIM_FEEDFORWARD=128
 
 # check dataset and set csv paths
 DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
@@ -35,10 +41,10 @@ else
     N_NODES=4
 fi
 
-export CUDA_VISIBLE_DEVICES=$1
+export CUDA_VISIBLE_DEVICES=0
 
-for i in 1 2 3
-do
+#for i in 1 2 3
+#do
     python3 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
@@ -57,5 +63,8 @@ do
                         --batch_size=$BATCH_SIZE \
                         --dim_lstm_hidden=$DIM_LSTM_HIDDEN \
                         --dim_lstm_input=$DIM_LSTM_INPUT \
-                        --bidirectional=$BIDIRECTIONAL
-done
+                        --bidirectional=$BIDIRECTIONAL \
+                        --d_model=$D_MODEL \
+                        --nhead=$NHEAD \
+                        --dim_feedforward=$DIM_FEEDFORWARD \
+#done
