@@ -148,16 +148,16 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str)
     parser.add_argument('--max_epoch', type=int)
     parser.add_argument('--batch_size', type=int)
+    parser.add_argument('--dim_lstm_input', type=int)
+    parser.add_argument('--dim_lstm_hidden', type=int)
 
     args = parser.parse_args()
 
     params = vars(args)
 
-    # neptune.init('cjlee/AnomalyDetection-GNN')
-    # experiment = neptune.create_experiment(name=args.exp_name, params=params)
-    # args.out_file = experiment.id + '.pth'
-    neptune = None
-    args.out_file = 'debug.pth'
+    neptune.init('cjlee/AnomalyDetection-GNN')
+    experiment = neptune.create_experiment(name=args.exp_name, params=params)
+    args.out_file = experiment.id + '.pth'
 
     print('parameters:')
     print('='*90)

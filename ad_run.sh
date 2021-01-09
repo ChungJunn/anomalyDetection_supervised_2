@@ -8,6 +8,9 @@ PATIENCE=20
 MAX_EPOCH=10000
 BATCH_SIZE=64
 
+DIM_LSTM_HIDDEN=64
+DIM_LSTM_INPUT=22
+
 # check dataset and set csv paths
 DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
 if [ $DATASET = 'cnsm_exp1' ]
@@ -50,5 +53,7 @@ do
                         --exp_name=$EXP_NAME \
                         --dataset=$DATASET \
                         --max_epoch=$MAX_EPOCH \
-                        --batch_size=$BATCH_SIZE
+                        --batch_size=$BATCH_SIZE \
+                        --dim_lstm_hidden=$DIM_LSTM_HIDDEN \
+                        --dim_lstm_input=$DIM_LSTM_INPUT
 done

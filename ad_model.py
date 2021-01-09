@@ -5,9 +5,9 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 class DNN_classifier(nn.Module):
-    def __init__(self):
+    def __init__(self, dim_input):
         super(DNN_classifier, self).__init__()
-        self.fc1 = nn.Linear(22, 600)
+        self.fc1 = nn.Linear(dim_input, 600)
         self.fc2 = nn.Linear(600, 600)
         self.fc3 = nn.Linear(600, 600)
         self.fc4 = nn.Linear(600, 2)
@@ -72,7 +72,7 @@ class AD_SUP2_MODEL2(nn.Module):
         super(AD_SUP2_MODEL2, self).__init__()
         self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden)
         self.pooling_layer=pooling_layer(reduce=reduce)
-        self.classifier_layer=DNN_classifier()
+        self.classifier_layer=DNN_classifier(dim_input=dim_lstm_hidden)
 
     def forward(self, x): 
         # reverse the order
