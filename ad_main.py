@@ -47,9 +47,16 @@ def train_main(args, neptune):
     criterion = F.nll_loss
 
     # declare model
-    # model = AD_SUP2_MODEL1(reduce=args.reduce).to(device)
-    # model = AD_SUP2_MODEL2(dim_lstm_input=args.dim_lstm_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional).to(device)
-    model = AD_SUP2_MODEL3(d_model=args.d_model, nhead=args.nhead, dim_feedforward=args.dim_feedforward, reduce=args.reduce).to(device)
+    if args.encoder=='none':
+        model = AD_SUP2_MODEL1(reduce=args.reduce, dim_input=args.dim_input).to(device)
+    elif args.encoder=='rnn':
+        model = AD_SUP2_MODEL2(dim_lstm_input=args.dim_lstm_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional).to(device)
+    elif args.encoder=='transformer':
+        model = AD_SUP2_MODEL3(d_model=args.d_model, nhead=args.nhead, dim_feedforward=args.dim_feedforward, reduce=args.reduce).to(device)
+    else:
+        print("model must be either \'none\', \'rnn\', \'transformer\'")
+        sys.exit(0)
+
     print('# model', model)
 
     csv_files=[]
@@ -70,7 +77,6 @@ def train_main(args, neptune):
     # modify the dataset to produce labels
     # create a training loop
     train_loss = 0.0
-    train_loss2 = 0.0
     log_interval=1000
     bc = 0
     best_val_f1 = None
@@ -151,6 +157,9 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str)
     parser.add_argument('--max_epoch', type=int)
     parser.add_argument('--batch_size', type=int)
+    parser.add_argument('--encoder', type=str)
+    # Simple model params
+    parser.add_argument('--dim_input', type=int)
     # RNN params
     parser.add_argument('--dim_lstm_input', type=int)
     parser.add_argument('--dim_lstm_hidden', type=int)

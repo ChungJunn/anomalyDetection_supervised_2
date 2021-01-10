@@ -5,8 +5,14 @@ REDUCE=$3 # mean, max, or last_hidden
 OPTIMIZER='Adam'
 LR=0.001
 PATIENCE=20
-MAX_EPOCH=5
+MAX_EPOCH=1
 BATCH_SIZE=64
+
+# Model
+ENCODER='none' # rnn, transformer, none
+
+# Simple model params
+DIM_INPUT=22
 
 # RNN params
 BIDIRECTIONAL=1
@@ -43,8 +49,8 @@ fi
 
 export CUDA_VISIBLE_DEVICES=$1
 
-for i in 1 2 3 4 5
-do
+#for i in 1 2 3 4 5
+#do
     python3 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
@@ -66,5 +72,7 @@ do
                         --bidirectional=$BIDIRECTIONAL \
                         --d_model=$D_MODEL \
                         --nhead=$NHEAD \
-                        --dim_feedforward=$DIM_FEEDFORWARD
-done
+                        --dim_feedforward=$DIM_FEEDFORWARD \
+                        --dim_input=$DIM_INPUT \
+                        --encoder=$ENCODER
+#done

@@ -21,10 +21,10 @@ class DNN_classifier(nn.Module):
         return F.log_softmax(x, dim=1)
 
 class AD_SUP2_MODEL1(nn.Module):
-    def __init__(self, reduce):
+    def __init__(self, dim_input, reduce):
         super(AD_SUP2_MODEL1, self).__init__()
 
-        self.classifier = DNN_classifier()
+        self.classifier = DNN_classifier(dim_input=dim_input)
         self.reduce = reduce # either 'mean' or 'max'
 
     def encoder(self, annotation):
@@ -39,8 +39,10 @@ class AD_SUP2_MODEL1(nn.Module):
         return enc_out
 
     def forward(self, annotation):
+        annotation=torch.transpose(annotation,0,1)
 
         encoded = self.encoder(annotation)
+        encoded=encoded.squeeze(0)
 
         logits = self.classifier(encoded)
 
