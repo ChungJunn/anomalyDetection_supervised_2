@@ -5,7 +5,7 @@ REDUCE=$3 # mean, max, or last_hidden
 OPTIMIZER='Adam'
 LR=0.001
 PATIENCE=20
-MAX_EPOCH=1000
+MAX_EPOCH=5
 BATCH_SIZE=64
 
 # RNN params

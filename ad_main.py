@@ -73,7 +73,7 @@ def train_main(args, neptune):
     train_loss2 = 0.0
     log_interval=1000
     bc = 0
-    best_val = None
+    best_val_f1 = None
     savedir = './result/' + args.out_file
     n_samples = trainiter.n_samples
 
@@ -103,15 +103,16 @@ def train_main(args, neptune):
             if end_of_data == 1: break
 
         # evaluation code
-        valid_loss = validate(model, valiter, device, criterion)
-        print('epoch: {:d} | valid_loss: {:.4f}'.format(ei+1, valid_loss))
-        if neptune is not None: neptune.log_metric('valid loss', ei, valid_loss)
+        # valid_loss = validate(model, valiter, device, criterion)
+        acc,prec,rec,f1=eval_main(model,valiter,device,neptune=None)
+        print('epoch: {:d} | valid_f1: {:.4f}'.format(ei+1, f1))
+        if neptune is not None: neptune.log_metric('valid f1', ei, f1)
 
         # need to implement early-stop
-        if ei == 0 or valid_loss < best_val:
+        if ei == 0 or f1 > best_val_f1:
             torch.save(model, savedir)
             bc = 0
-            best_val = valid_loss
+            best_val_f1=f1
             print('found new best model')
         else:
             bc += 1
