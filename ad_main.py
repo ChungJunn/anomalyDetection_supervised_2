@@ -23,6 +23,8 @@ from ad_model import AD_SUP2_MODEL3
 from ad_data import AD_SUP2_ITERATOR
 from ad_eval import eval_main
 
+from ray import tune
+
 def validate(model, validiter, device, criterion):
     valid_loss = 0.0
 
@@ -100,41 +102,24 @@ def train_main(args, neptune):
             optimizer.step()
             train_loss += loss.item()
         
+            '''
             if li % log_interval == (log_interval - 1):
                 train_loss = train_loss / log_interval
                 print('epoch: {:d} | li: {:d} | train_loss: {:.4f}'.format(ei+1, li+1, train_loss))
                 if neptune is not None: neptune.log_metric('train loss', (ei*n_samples)+(li+1), train_loss)
                 train_loss = 0
+            '''
 
             if end_of_data == 1: break
 
         # evaluation code
         # valid_loss = validate(model, valiter, device, criterion)
+        train_loss=train_loss/li
         acc,prec,rec,f1=eval_main(model,valiter,device,neptune=None)
-        print('epoch: {:d} | valid_f1: {:.4f}'.format(ei+1, f1))
+        print('epoch: {:d} | train_loss: {:.4} | valid_f1: {:.4f}'.format(ei+1, train_loss, f1))
         if neptune is not None: neptune.log_metric('valid f1', ei, f1)
-
-        # need to implement early-stop
-        if ei == 0 or f1 > best_val_f1:
-            torch.save(model, savedir)
-            bc = 0
-            best_val_f1=f1
-            print('found new best model')
-        else:
-            bc += 1
-            if bc > args.patience:
-                print('early stopping..')
-                break
-            print('bad counter == %d' % (bc))
-
-    model = torch.load(savedir)
-    acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=neptune)
-
-    if neptune is not None:
-        neptune.set_property('acc', acc)
-        neptune.set_property('prec', prec)
-        neptune.set_property('rec', rec)
-        neptune.set_property('f1', f1)
+        tune.report(train_loss=train_loss, val_f1=f1)
+        train_loss=0.0
 
     return
 
