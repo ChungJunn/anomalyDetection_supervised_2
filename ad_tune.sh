@@ -2,10 +2,11 @@
 DATASET=$1 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 
 PATIENCE=20
-MAX_EPOCH=200
+MAX_EPOCH=2000
+N_SAMPLES=5
 
 # Model
-ENCODER='none' # rnn, transformer, none
+ENCODER=$2 # rnn, transformer, none
 
 # Simple model params
 DIM_INPUT=22
@@ -61,5 +62,6 @@ python3 ad_main_tune.py  --data_dir=$DATA_DIR \
                         --nhead=$NHEAD \
                         --dim_feedforward=$DIM_FEEDFORWARD \
                         --dim_input=$DIM_INPUT \
-                        --encoder=$ENCODER
+                        --encoder=$ENCODER \
+                        --n_samples=$N_SAMPLES
 #done

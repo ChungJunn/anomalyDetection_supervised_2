@@ -36,6 +36,7 @@ if __name__=="__main__":
     parser.add_argument('--max_epoch', type=int)
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--encoder', type=str)
+    parser.add_argument('--n_samples', type=int)
     # Simple model params
     parser.add_argument('--dim_input', type=int)
     # RNN params
@@ -49,7 +50,7 @@ if __name__=="__main__":
 
     args = parser.parse_args()
 
-    args.out_file='temp.tune.pth'
+    name = args.dataset + '.' + args.encoder
 
     config = {
         'optimizer':tune.choice(['Adam','SGD','RMSprop']),
@@ -71,11 +72,11 @@ if __name__=="__main__":
 
     experiment=tune.run(
         partial(main,args=args),
-        name='raytune_none',
+        name=name,
         config=config,
-        local_dir='none_result',
+        local_dir='.ray_result',
         resources_per_trial={'cpu':2,'gpu':0.25},
-        num_samples=200,
+        num_samples=args.n_samples,
         scheduler=asha_scheduler,
         fail_fast=True,
         log_to_file=True,

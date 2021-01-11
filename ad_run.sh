@@ -2,11 +2,11 @@
 EXP_NAME='21.01.09.exp4'
 DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 REDUCE=$3 # mean, max, or last_hidden
-OPTIMIZER='Adam'
-LR=0.001
+OPTIMIZER=$4
+LR=$5
 PATIENCE=20
-MAX_EPOCH=1
-BATCH_SIZE=64
+MAX_EPOCH=2000
+BATCH_SIZE=$6
 
 # Model
 ENCODER='none' # rnn, transformer, none

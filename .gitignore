@@ -13,3 +13,4 @@ old/*
 todo
 script*
 none_result/*
+.ray_result/*

@@ -82,7 +82,6 @@ def train_main(args, neptune):
     log_interval=1000
     bc = 0
     best_val_f1 = None
-    savedir = './result/' + args.out_file
     n_samples = trainiter.n_samples
 
     for ei in range(args.max_epoch):
