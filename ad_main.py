@@ -51,12 +51,12 @@ def train_main(args, neptune):
     # declare model
     if args.encoder=='none':
         model = AD_SUP2_MODEL1(reduce=args.reduce, dim_input=args.dim_input).to(device)
-    elif args.encoder=='rnn':
+    elif args.encoder=='rnn' or args.encoder=='bidirectionalrnn':
         model = AD_SUP2_MODEL2(dim_lstm_input=args.dim_lstm_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional).to(device)
     elif args.encoder=='transformer':
         model = AD_SUP2_MODEL3(d_model=args.d_model, nhead=args.nhead, dim_feedforward=args.dim_feedforward, reduce=args.reduce).to(device)
     else:
-        print("model must be either \'none\', \'rnn\', \'transformer\'")
+        print("model must be either \'none\', \'rnn\',\'bidirectionalrnn\', \'transformer\'")
         sys.exit(0)
 
     print('# model', model)
@@ -100,14 +100,6 @@ def train_main(args, neptune):
             # optimizer
             optimizer.step()
             train_loss += loss.item()
-        
-            '''
-            if li % log_interval == (log_interval - 1):
-                train_loss = train_loss / log_interval
-                print('epoch: {:d} | li: {:d} | train_loss: {:.4f}'.format(ei+1, li+1, train_loss))
-                if neptune is not None: neptune.log_metric('train loss', (ei*n_samples)+(li+1), train_loss)
-                train_loss = 0
-            '''
 
             if end_of_data == 1: break
 

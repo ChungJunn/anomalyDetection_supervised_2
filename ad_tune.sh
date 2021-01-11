@@ -1,25 +1,30 @@
 #!/bin/bash
 DATASET=$1 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 
-PATIENCE=20
-MAX_EPOCH=2000
-N_SAMPLES=5
+PATIENCE=50 # not used by script
+MAX_EPOCH=1000
+N_SAMPLES=200
 
 # Model
-ENCODER=$2 # rnn, transformer, none
+ENCODER=$2 # rnn, transformer, none, bidirectionalrnn
+if [ $ENCODER = 'bidirectionalrnn' ]
+then
+    BIDIRECTIONAL=1
+else
+    BIDIRECTIONAL=0
+fi
 
 # Simple model params
 DIM_INPUT=22
 
 # RNN params
-BIDIRECTIONAL=1
-DIM_LSTM_HIDDEN=64
+DIM_LSTM_HIDDEN=-1 # given by raytune
 DIM_LSTM_INPUT=22
 
 # Transformer params
 D_MODEL=22
-NHEAD=2
-DIM_FEEDFORWARD=128
+NHEAD=-1 #given by raytune
+DIM_FEEDFORWARD=-1 #given by raytune
 
 # check dataset and set csv paths
 DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'

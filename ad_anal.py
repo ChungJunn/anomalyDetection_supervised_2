@@ -1,7 +1,7 @@
 import ray
 from ray import tune
 
-analysis = tune.Analysis(".ray_result/cnsm_exp1.none", default_metric = 'val_f1', default_mode = 'max')
+analysis = tune.Analysis(".ray_result/cnsm_exp2_2.transformer", default_metric = 'val_f1', default_mode = 'max')
 best_logdir = analysis.get_best_logdir()
 print("best trial log path:\n", best_logdir)
 best_trial = analysis.trial_dataframes[best_logdir]

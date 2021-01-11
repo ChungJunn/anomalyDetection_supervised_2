@@ -11,6 +11,12 @@ def main(config, checkpoint_dir=None, args=None):
     args.batch_size=config['batch_size']
     args.reduce=config['reduce']
 
+    if args.encoder=='rnn' or args.encoder=='bidirectionalrnn':
+        args.dim_lstm_hidden=config['dim_lstm_hidden']
+    elif args.encoder=='transformer':
+        args.nhead=config['nhead']
+        args.dim_feedforward=config['dim_feedforward']
+
     neptune=None
 
     train_main(args, neptune)
@@ -52,12 +58,30 @@ if __name__=="__main__":
 
     name = args.dataset + '.' + args.encoder
 
-    config = {
-        'optimizer':tune.choice(['Adam','SGD','RMSprop']),
-        'lr':tune.qloguniform(1e-4,0.1,1e-4),
-        'batch_size':tune.choice([32,64,128]),
-        'reduce':tune.choice(['mean','max'])
-    }
+    if args.encoder=='none':
+        config = {
+            'optimizer':tune.choice(['Adam','SGD','RMSprop']),
+            'lr':tune.qloguniform(1e-4,0.1,1e-4),
+            'batch_size':tune.choice([32,64,128]),
+            'reduce':tune.choice(['mean','max'])
+        }
+    elif args.encoder=='rnn' or args.encoder=='bidirectionalrnn':
+        config = {
+            'optimizer':tune.choice(['Adam','SGD','RMSprop']),
+            'lr':tune.qloguniform(1e-4,0.1,1e-4),
+            'batch_size':tune.choice([32,64,128]),
+            'reduce':tune.choice(['mean','max', 'last_hidden']),
+            'dim_lstm_hidden':tune.choice([16, 32, 64, 128, 256])
+        }
+    elif args.encoder=='transformer':
+        config = {
+            'optimizer':tune.choice(['Adam','SGD','RMSprop']),
+            'lr':tune.qloguniform(1e-4,0.1,1e-4),
+            'batch_size':tune.choice([32,64,128]),
+            'reduce':tune.choice(['mean','max', 'last_hidden']),
+            'nhead':tune.choice([1,2,11]),
+            'dim_feedforward':tune.choice([64, 128, 256])
+        }
 
     asha_scheduler=ASHAScheduler(
         metric='val_f1',
