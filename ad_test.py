@@ -12,6 +12,19 @@ if __name__ == '__main__':
     # argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str)
+    parser.add_argument('--model', type=str)
+    parser.add_argument('--trained_dataset', type=str)
+    parser.add_argument('--model_file', type=str)
+    parser.add_argument('--reduce', type=str)
+    parser.add_argument('--optimizer', type=str)
+    parser.add_argument('--lr', type=float)
+    parser.add_argument('--batch_size', type=int)
+    parser.add_argument('--dim_lstm_hidden', type=int)
+    parser.add_argument('--nlayer', type=int)
+    parser.add_argument('--d_model', type=int)
+    parser.add_argument('--nhead', type=int)
+    parser.add_argument('--dim_feedforward', type=int)
+    parser.add_argument('--test_dataset', type=str)
     parser.add_argument('--model_path', type=str)
     parser.add_argument('--data_dir', type=str)
     parser.add_argument('--n_nodes', type=int)
@@ -26,7 +39,7 @@ if __name__ == '__main__':
     params = vars(args)
 
     # set neptune
-    neptune.init('cjlee/AnomalyDetection-GNN')
+    neptune.init('cjlee/anomalyDetection-supervised-2')
     experiment = neptune.create_experiment(name=args.exp_name, params=params)
 
     print('parameters:')
@@ -46,7 +59,7 @@ if __name__ == '__main__':
     csv_files.append(args.csv_label)
 
     from ad_data import AD_SUP2_ITERATOR
-    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files)
+    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files, batch_size=args.batch_size)
 
     # evaluate the model and measure performance 
     acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=None)

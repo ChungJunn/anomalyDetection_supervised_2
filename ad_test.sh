@@ -1,12 +1,25 @@
 #!/bin/bash
+
 EXP_NAME='20.1.17-testing'
-MODEL_FILE=$2
+
+MODEL=$2
+TRAINED_DATASET=$3
+MODEL_FILE=$4
 MODEL_PATH='./result/'$MODEL_FILE'.pth'
-DATASET=$3
+REDUCE=$5
+OPTIMIZER=$6
+LR=$7
+BATCH_SIZE=$8
+DIM_LSTM_HIDDEN=$9
+NLAYER=${10}
+D_MODEL=${11}
+NHEAD=${12}
+DIM_FEEDFORWARD=${13}
+TEST_DATASET=${14}
 
 # check dataset and set csv paths
-DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
-if [ $DATASET = 'cnsm_exp1' ]
+DATA_DIR=$HOME'/autoregressor/data/'$TRAINED_DATASET'_data/gnn_data/'
+if [ $TRAINED_DATASET = 'cnsm_exp1' ]
 then
     CSV1='rnn_len16.fw.csv'
     CSV2='rnn_len16.ids.csv'
@@ -31,6 +44,19 @@ export CUDA_VISIBLE_DEVICES=$1
 
 python3 ad_test.py \
         --exp_name=$EXP_NAME \
+        --model=$MODEL \
+        --trained_dataset=$TRAINED_DATASET\
+        --model_file=$MODEL_FILE\
+        --reduce=$REDUCE\
+        --optimizer=$OPTIMIZER\
+        --lr=$LR\
+        --batch_size=$BATCH_SIZE\
+        --dim_lstm_hidden=$DIM_LSTM_HIDDEN\
+        --nlayer=$NLAYER\
+        --d_model=$D_MODEL\
+        --nhead=$NHEAD\
+        --dim_feedforward=$DIM_FEEDFORWARD\
+        --test_dataset=$TEST_DATASET\
         --model_path=$MODEL_PATH \
         --data_dir=$DATA_DIR \
         --n_nodes=$N_NODES \
