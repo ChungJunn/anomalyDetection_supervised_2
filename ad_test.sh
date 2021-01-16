@@ -18,8 +18,8 @@ DIM_FEEDFORWARD=${13}
 TEST_DATASET=${14}
 
 # check dataset and set csv paths
-DATA_DIR=$HOME'/autoregressor/data/'$TRAINED_DATASET'_data/gnn_data/'
-if [ $TRAINED_DATASET = 'cnsm_exp1' ]
+DATA_DIR=$HOME'/autoregressor/data/'$TEST_DATASET'_data/gnn_data/'
+if [ $TEST_DATASET = 'cnsm_exp1' ]
 then
     CSV1='rnn_len16.fw.csv'
     CSV2='rnn_len16.ids.csv'
