@@ -49,7 +49,7 @@ fi
 
 export CUDA_VISIBLE_DEVICES=$1
 
-for i in 1 2 3 4 5
+for i in 1 2 3
 do
     python3 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
