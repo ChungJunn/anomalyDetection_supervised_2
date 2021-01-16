@@ -35,5 +35,6 @@ def eval_main(model, validiter, device, neptune=None):
     f1 = f1_score(targets, preds)
 
     print(acc, prec, rec, f1)
+    model.train()
 
     return acc, prec, rec, f1

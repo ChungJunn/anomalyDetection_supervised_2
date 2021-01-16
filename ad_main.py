@@ -49,7 +49,7 @@ def train_main(args, neptune):
     # declare model
     if args.encoder=='none':
         model = AD_SUP2_MODEL1(reduce=args.reduce, dim_input=args.dim_input).to(device)
-    elif args.encoder=='rnn':
+    elif args.encoder=='rnn' or args.encoder=='bidirectionalrnn':
         model = AD_SUP2_MODEL2(dim_lstm_input=args.dim_lstm_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional).to(device)
     elif args.encoder=='transformer':
         model = AD_SUP2_MODEL3(d_model=args.d_model, nhead=args.nhead, dim_feedforward=args.dim_feedforward, reduce=args.reduce).to(device)

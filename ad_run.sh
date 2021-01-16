@@ -1,28 +1,28 @@
 #!/bin/bash
-EXP_NAME='21.01.09.exp4'
-DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
-REDUCE=$3 # mean, max, or last_hidden
-OPTIMIZER='Adam'
-LR=0.001
-PATIENCE=20
-MAX_EPOCH=1
-BATCH_SIZE=64
+EXP_NAME='21.01.15.exp1'
 
 # Model
-ENCODER='none' # rnn, transformer, none
+ENCODER=$2 # rnn, transformer, none
+DATASET=$3 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+BATCH_SIZE=$4
+REDUCE=$8 # mean, max, or last_hidden
+OPTIMIZER=$7
+LR=$6
+PATIENCE=20
+MAX_EPOCH=2000
 
 # Simple model params
 DIM_INPUT=22
 
 # RNN params
 BIDIRECTIONAL=1
-DIM_LSTM_HIDDEN=64
+DIM_LSTM_HIDDEN=$5
 DIM_LSTM_INPUT=22
 
 # Transformer params
 D_MODEL=22
-NHEAD=2
-DIM_FEEDFORWARD=128
+NHEAD=$9
+DIM_FEEDFORWARD=${10}
 
 # check dataset and set csv paths
 DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
@@ -49,8 +49,8 @@ fi
 
 export CUDA_VISIBLE_DEVICES=$1
 
-#for i in 1 2 3 4 5
-#do
+for i in 1 2 3 4 5
+do
     python3 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
@@ -75,4 +75,4 @@ export CUDA_VISIBLE_DEVICES=$1
                         --dim_feedforward=$DIM_FEEDFORWARD \
                         --dim_input=$DIM_INPUT \
                         --encoder=$ENCODER
-#done
+done
