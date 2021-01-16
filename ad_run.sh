@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='21.01.15.exp1'
+EXP_NAME='21.01.16.exp3'
 
 # Model
 ENCODER=$2 # rnn, transformer, none
