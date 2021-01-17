@@ -13,3 +13,5 @@ old/*
 todo
 script*
 .ray_result/*
+script/*
+*.exp*.sh
