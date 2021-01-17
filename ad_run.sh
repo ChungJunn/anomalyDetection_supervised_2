@@ -2,7 +2,7 @@
 EXP_NAME='21.01.17.debug'
 
 # Model
-ENCODER='rnn' # rnn, transformer, none
+ENCODER='transformer' # rnn, transformer, none
 DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 BATCH_SIZE=64
 REDUCE='mean' # mean, max, or last_hidden
@@ -24,9 +24,8 @@ DIM_FEATURE_MAPPING=24
 NLAYER=$2
 
 # Transformer params
-D_MODEL=-1
-NHEAD=-1
-DIM_FEEDFORWARD=-1
+NHEAD=1
+DIM_FEEDFORWARD=128
 
 # check dataset and set csv paths
 DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
@@ -76,7 +75,6 @@ export CUDA_VISIBLE_DEVICES=6
                         --dim_feature_mapping=$DIM_FEATURE_MAPPING \
                         --nlayer=$NLAYER \
                         --bidirectional=$BIDIRECTIONAL \
-                        --d_model=$D_MODEL \
                         --nhead=$NHEAD \
                         --dim_feedforward=$DIM_FEEDFORWARD \
                         --dim_input=$DIM_INPUT \
