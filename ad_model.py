@@ -87,7 +87,7 @@ class AD_SUP2_MODEL3(nn.Module):
         return logits
 
 class AD_SUP2_MODEL2(nn.Module):
-    def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping):
+    def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer):
         super(AD_SUP2_MODEL2, self).__init__()
         self.pooling_layer=pooling_layer(reduce=reduce)
         self.use_feature_mapping = use_feature_mapping
@@ -102,10 +102,10 @@ class AD_SUP2_MODEL2(nn.Module):
         if bidirectional == 1:
             dim_classifier_input = dim_lstm_hidden*2
             self.classifier_layer=DNN_classifier(dim_input=dim_classifier_input)
-            self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden, bidirectional=True)
+            self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden, bidirectional=True, num_layers=nlayer)
         else:
             self.classifier_layer=DNN_classifier(dim_input=dim_lstm_hidden)
-            self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden, bidirectional=False)
+            self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden, bidirectional=False, num_layers=nlayer)
 
     def forward(self, x):
         # reverse the order

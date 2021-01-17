@@ -17,8 +17,11 @@ DIM_INPUT=22
 # RNN params
 BIDIRECTIONAL=1
 DIM_LSTM_HIDDEN=64
-USE_FEATURE_MAPPING=$2
+USE_FEATURE_MAPPING=$1
 DIM_FEATURE_MAPPING=24
+
+# RNN and Transformer param
+NLAYER=$2
 
 # Transformer params
 D_MODEL=-1
@@ -48,7 +51,7 @@ else
     N_NODES=4
 fi
 
-export CUDA_VISIBLE_DEVICES=$1
+export CUDA_VISIBLE_DEVICES=6
 
 #for i in 1 2 3
 #do
@@ -71,6 +74,7 @@ export CUDA_VISIBLE_DEVICES=$1
                         --dim_lstm_hidden=$DIM_LSTM_HIDDEN \
                         --use_feature_mapping=$USE_FEATURE_MAPPING \
                         --dim_feature_mapping=$DIM_FEATURE_MAPPING \
+                        --nlayer=$NLAYER \
                         --bidirectional=$BIDIRECTIONAL \
                         --d_model=$D_MODEL \
                         --nhead=$NHEAD \
