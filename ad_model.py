@@ -87,13 +87,21 @@ class AD_SUP2_MODEL3(nn.Module):
         return logits
 
 class AD_SUP2_MODEL2(nn.Module):
-    def __init__(self, dim_lstm_input, dim_lstm_hidden, reduce, bidirectional):
+    def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping):
         super(AD_SUP2_MODEL2, self).__init__()
         self.pooling_layer=pooling_layer(reduce=reduce)
-        
+        self.use_feature_mapping = use_feature_mapping
+        self.dim_feature_mapping = dim_feature_mapping
+        # fm layer
+        if use_feature_mapping == 1:
+            self.fm_layer=nn.Linear(dim_input, dim_feature_mapping)
+            dim_lstm_input = dim_feature_mapping
+        else:
+            dim_lstm_input = dim_input
+
         if bidirectional == 1:
-            dim_input = dim_lstm_hidden*2
-            self.classifier_layer=DNN_classifier(dim_input=dim_input)
+            dim_classifier_input = dim_lstm_hidden*2
+            self.classifier_layer=DNN_classifier(dim_input=dim_classifier_input)
             self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden, bidirectional=True)
         else:
             self.classifier_layer=DNN_classifier(dim_input=dim_lstm_hidden)
@@ -102,6 +110,7 @@ class AD_SUP2_MODEL2(nn.Module):
     def forward(self, x):
         # reverse the order
         x = torch.transpose(x, 0, 1)
+        Tx, Bn, D = x.size()
 
         # create inverted indices
         idx = [i for i in range(x.size(0)-1, -1, -1)]
@@ -109,6 +118,11 @@ class AD_SUP2_MODEL2(nn.Module):
         x = x.index_select(0, idx)
 
         # RNN layer
+        if self.use_feature_mapping == 1:
+            x = x.view(Tx*Bn,D) 
+            x = self.fm_layer(x)
+            x = x.view(Tx,Bn,self.dim_feature_mapping)
+        
         x, hidden = self.lstm_layer(x, None)
         #print('lstm h: ', x.shape)
         #print('lstm c: ', hidden[1].shape)

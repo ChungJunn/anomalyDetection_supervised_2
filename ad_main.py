@@ -50,7 +50,7 @@ def train_main(args, neptune):
     if args.encoder=='none':
         model = AD_SUP2_MODEL1(reduce=args.reduce, dim_input=args.dim_input).to(device)
     elif args.encoder=='rnn' or args.encoder=='bidirectionalrnn':
-        model = AD_SUP2_MODEL2(dim_lstm_input=args.dim_lstm_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional).to(device)
+        model = AD_SUP2_MODEL2(dim_input=args.dim_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping).to(device)
     elif args.encoder=='transformer':
         model = AD_SUP2_MODEL3(d_model=args.d_model, nhead=args.nhead, dim_feedforward=args.dim_feedforward, reduce=args.reduce).to(device)
     else:
@@ -161,8 +161,9 @@ if __name__ == '__main__':
     # Simple model params
     parser.add_argument('--dim_input', type=int)
     # RNN params
-    parser.add_argument('--dim_lstm_input', type=int)
     parser.add_argument('--dim_lstm_hidden', type=int)
+    parser.add_argument('--use_feature_mapping', type=int)
+    parser.add_argument('--dim_feature_mapping', type=int)
     parser.add_argument('--bidirectional', type=int)
     # Transformer params 
     parser.add_argument('--d_model', type=int)

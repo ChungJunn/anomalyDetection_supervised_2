@@ -1,13 +1,13 @@
 #!/bin/bash
-EXP_NAME='21.01.16.exp3'
+EXP_NAME='21.01.17.debug'
 
 # Model
-ENCODER=$2 # rnn, transformer, none
-DATASET=$3 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
-BATCH_SIZE=$4
-REDUCE=$8 # mean, max, or last_hidden
-OPTIMIZER=$7
-LR=$6
+ENCODER='rnn' # rnn, transformer, none
+DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+BATCH_SIZE=64
+REDUCE='mean' # mean, max, or last_hidden
+OPTIMIZER='Adam'
+LR=0.001
 PATIENCE=20
 MAX_EPOCH=2000
 
@@ -16,13 +16,14 @@ DIM_INPUT=22
 
 # RNN params
 BIDIRECTIONAL=1
-DIM_LSTM_HIDDEN=$5
-DIM_LSTM_INPUT=22
+DIM_LSTM_HIDDEN=64
+USE_FEATURE_MAPPING=$2
+DIM_FEATURE_MAPPING=24
 
 # Transformer params
-D_MODEL=22
-NHEAD=$9
-DIM_FEEDFORWARD=${10}
+D_MODEL=-1
+NHEAD=-1
+DIM_FEEDFORWARD=-1
 
 # check dataset and set csv paths
 DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
@@ -49,8 +50,8 @@ fi
 
 export CUDA_VISIBLE_DEVICES=$1
 
-for i in 1 2 3
-do
+#for i in 1 2 3
+#do
     python3 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
@@ -68,11 +69,12 @@ do
                         --max_epoch=$MAX_EPOCH \
                         --batch_size=$BATCH_SIZE \
                         --dim_lstm_hidden=$DIM_LSTM_HIDDEN \
-                        --dim_lstm_input=$DIM_LSTM_INPUT \
+                        --use_feature_mapping=$USE_FEATURE_MAPPING \
+                        --dim_feature_mapping=$DIM_FEATURE_MAPPING \
                         --bidirectional=$BIDIRECTIONAL \
                         --d_model=$D_MODEL \
                         --nhead=$NHEAD \
                         --dim_feedforward=$DIM_FEEDFORWARD \
                         --dim_input=$DIM_INPUT \
                         --encoder=$ENCODER
-done
+#done
