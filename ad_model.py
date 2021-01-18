@@ -94,37 +94,17 @@ class pooling_layer:
 class AD_SUP2_MODEL3(nn.Module):
     def __init__(self, dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer):
         super(AD_SUP2_MODEL3, self).__init__()
-        self.pooling_layer=pooling_layer(reduce=reduce)
-        from torch.nn import TransformerEncoderLayer, TransformerEncoder
-        self.use_feature_mapping = use_feature_mapping
-        self.dim_feature_mapping = dim_feature_mapping
-
-        # use feature mapping
-        if self.use_feature_mapping:
-            self.fm_layer = nn.Linear(dim_input, dim_feature_mapping)
-            d_model = self.dim_feature_mapping
+        if use_feature_mapping:
+            d_model = dim_feature_mapping
         else:
             d_model = dim_input
 
-        self.t_layer = TransformerEncoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward)
-        self.t_layers = TransformerEncoder(encoder_layer=self.t_layer, num_layers=nlayer)
-        self.classifier_layer = DNN_classifier(dim_input=d_model)
+        self.encoder=Transformer_encoder(dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer)
+        self.classifier=DNN_classifier(dim_input=d_model)
 
     def forward(self, x):
-        x = torch.transpose(x, 0, 1)
-        Tx, Bn, D = x.size()
-
-        if self.use_feature_mapping == 1:
-            x = x.contiguous().view(Tx*Bn,D)
-            x = self.fm_layer(x)
-            x = x.view(Tx,Bn,self.dim_feature_mapping)
-
-        x = self.t_layers(x)
-
-        x = self.pooling_layer(x)
-        x = x.squeeze(0)
-
-        logits = self.classifier_layer(x)
+        x = self.encoder(x)
+        logits = self.classifier(x)
 
         return logits
 

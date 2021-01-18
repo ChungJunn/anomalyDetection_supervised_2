@@ -2,7 +2,7 @@
 EXP_NAME='21.01.18.debug'
 
 # Model
-ENCODER='rnn' # rnn, transformer, none
+ENCODER='transformer' # rnn, transformer, none
 BIDIRECTIONAL=1
 
 DATASET='cnsm_exp2_1' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
