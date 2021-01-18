@@ -4,6 +4,32 @@ import numpy as np
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+class RNN_classifier(nn.Module):
+    def __init__(self, dim_input, dim_lstm_hidden, dim_fc_hidden, dim_output):
+        super(RNN_classifier, self).__init__()
+        self.dim_input = dim_input
+        self.dim_hidden1 = dim_lstm_hidden
+        self.dim_hidden2 = dim_fc_hidden
+        self.rnn = nn.LSTM(input_size=dim_input, hidden_size=self.dim_hidden1)
+        self.fc1 = nn.Linear(self.dim_hidden1, self.dim_hidden2)
+        self.fc2 = nn.Linear(self.dim_hidden2, dim_output)
+        self.relu = nn.ReLU()
+
+    def forward(self, input, hidden=None):
+        output, hidden = self.rnn(input, hidden)
+
+        output = self.fc1(output)
+        output = self.relu(output)
+
+        output = self.fc2(output)
+
+        return F.log_softmax(output, dim=1), hidden
+
+    def init_hidden(self, Bn):
+        hidden = torch.zeros(1, Bn, self.dim_hidden1)
+        cell = torch.zeros(1, Bn, self.dim_hidden1)
+        return hidden, cell
+
 class DNN_classifier(nn.Module):
     def __init__(self, dim_input):
         super(DNN_classifier, self).__init__()
@@ -102,12 +128,13 @@ class AD_SUP2_MODEL3(nn.Module):
 
         return logits
 
-class AD_SUP2_MODEL2(nn.Module):
+class RNN_encoder(nn.Module):
     def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer):
-        super(AD_SUP2_MODEL2, self).__init__()
+        super(RNN_encoder, self).__init__()
         self.pooling_layer=pooling_layer(reduce=reduce)
         self.use_feature_mapping = use_feature_mapping
         self.dim_feature_mapping = dim_feature_mapping
+
         # fm layer
         if use_feature_mapping == 1:
             self.fm_layer=nn.Linear(dim_input, dim_feature_mapping)
@@ -116,11 +143,8 @@ class AD_SUP2_MODEL2(nn.Module):
             dim_lstm_input = dim_input
 
         if bidirectional == 1:
-            dim_classifier_input = dim_lstm_hidden*2
-            self.classifier_layer=DNN_classifier(dim_input=dim_classifier_input)
             self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden, bidirectional=True, num_layers=nlayer)
         else:
-            self.classifier_layer=DNN_classifier(dim_input=dim_lstm_hidden)
             self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden, bidirectional=False, num_layers=nlayer)
 
     def forward(self, x):
@@ -135,24 +159,78 @@ class AD_SUP2_MODEL2(nn.Module):
 
         # RNN layer
         if self.use_feature_mapping == 1:
-            x = x.view(Tx*Bn,D) 
+            x = x.view(Tx*Bn,D)
             x = self.fm_layer(x)
             x = x.view(Tx,Bn,self.dim_feature_mapping)
-        
+
         x, hidden = self.lstm_layer(x, None)
-        #print('lstm h: ', x.shape)
-        #print('lstm c: ', hidden[1].shape)
 
         # pooling layer 
         x = self.pooling_layer(x)
         x = x.squeeze(0) # squeeze node-dimension
-        #print('pooling out: ', x.shape)
 
-        # classification layer
-        logits = self.classifier_layer(x)
-        #print('logits out: ', logits.shape)
+        return x
+
+class Transformer_encoder(nn.Module):
+    def __init__(self, dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer):
+        super(Transformer_encoder, self).__init__()
+        self.pooling_layer=pooling_layer(reduce=reduce)
+
+        from torch.nn import TransformerEncoderLayer, TransformerEncoder
+        self.use_feature_mapping = use_feature_mapping
+        self.dim_feature_mapping = dim_feature_mapping
+
+        # use feature mapping
+        if self.use_feature_mapping:
+            self.fm_layer = nn.Linear(dim_input, dim_feature_mapping)
+            d_model = self.dim_feature_mapping
+        else:
+            d_model = dim_input
+
+        self.t_layer = TransformerEncoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward)
+        self.t_layers = TransformerEncoder(encoder_layer=self.t_layer, num_layers=nlayer)
+
+    def forward(self, x):
+        x = torch.transpose(x, 0, 1)
+        Tx, Bn, D = x.size()
+
+        if self.use_feature_mapping == 1:
+            x = x.contiguous().view(Tx*Bn,D)
+            x = self.fm_layer(x)
+            x = x.view(Tx,Bn,self.dim_feature_mapping)
+
+        x = self.t_layers(x)
+
+        x = self.pooling_layer(x)
+        x = x.squeeze(0)
+
+        return x
+
+class AD_SUP2_MODEL2(nn.Module):
+    def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer):
+        super(AD_SUP2_MODEL2, self).__init__()
+
+        if bidirectional==1:
+            dim_classifier_input=dim_lstm_hidden*2
+        else:
+            dim_classifier_input=dim_lstm_hidden
+
+        self.encoder=RNN_encoder(dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer)
+
+        self.classifier=DNN_classifier(dim_input=dim_classifier_input)
+
+    def forward(self, x):
+        x = self.encoder(x)
+        logits = self.classifier(x)
 
         return logits
+
+class AD_SUP2_MODEL4(nn.Module):
+    def __init__(self, dim_input, dim_lstm_hidden, dim_fc_hidden, dim_output):
+        pass
+
+    def forward(self, x):
+        pass
 
 if __name__ == '__main__':
     mylayer = pooling_layer(reduce='mean')
@@ -160,7 +238,4 @@ if __name__ == '__main__':
     myvec = torch.tensor([[1,2,3,4],[1,5,2,3]]).type(torch.float32)
 
     layer_out = mylayer(myvec)
-    
-    import pdb; pdb.set_trace()
-        
 
