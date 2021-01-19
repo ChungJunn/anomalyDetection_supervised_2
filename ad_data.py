@@ -98,19 +98,34 @@ if __name__ == '__main__':
     csv_files.append(args.csv_label)
 
     iter = AD_SUP2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files, batch_size=args.batch_size)
+    device = torch.device('cuda')
 
-    from ad_model import AD_SUP2_MODEL2
+    from ad_model import AD_SUP2_MODEL4
+    import torch.nn.functional as F
 
-    model = AD_SUP2_MODEL2(dim_lstm_input=22, dim_lstm_hidden=22, reduce=args.reduce)
-    print('model setup: ', model)
+    model = AD_SUP2_MODEL4(
+            dim_input=22,
+            enc_dim_lstm_hidden=64,
+            reduce='max',
+            bidirectional=1,
+            use_feature_mapping=1,
+            dim_feature_mapping=24,
+            nlayer=2,
+            clf_dim_lstm_hidden=64,
+            clf_dim_fc_hidden=128,
+            clf_dim_output=2).to(device)
 
-    print('iterator setup: ', iter.get_status())
+    hidden = None
     for iloop, (anno, label, end_of_data) in enumerate(iter):
-        import pdb; pdb.set_trace()
-        
-        #print('from iterator: ', anno.shape, label.shape)
+        anno, label = anno.to(device), label.to(device)
+        # print('from iterator: ', anno.shape, label.shape)
+        # take hidden, obtain output and loss, fix the model
+        out, hidden = model(anno, hidden)
+        out = out.squeeze(0)
 
-        logits = model(anno)
+        loss = F.nll_loss(out, label)
+
+        import pdb; pdb.set_trace()
         if end_of_data==1: break
 
     print('iter status: ', iter.get_status())

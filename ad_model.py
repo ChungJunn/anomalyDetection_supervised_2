@@ -18,6 +18,8 @@ class RNN_classifier(nn.Module):
     def forward(self, input, hidden=None):
         output, hidden = self.rnn(input, hidden)
 
+        output = output.squeeze(0)
+
         output = self.fc1(output)
         output = self.relu(output)
 
@@ -206,11 +208,26 @@ class AD_SUP2_MODEL2(nn.Module):
         return logits
 
 class AD_SUP2_MODEL4(nn.Module):
-    def __init__(self, dim_input, dim_lstm_hidden, dim_fc_hidden, dim_output):
-        pass
+    #def __init__(self, dim_input, dim_lstm_hidden, dim_fc_hidden, dim_output):
+    def __init__(self, dim_input, enc_dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer, clf_dim_lstm_hidden, clf_dim_fc_hidden, clf_dim_output):
+        super(AD_SUP2_MODEL4, self).__init__()
+        if bidirectional==1:
+            dim_classifier_input=enc_dim_lstm_hidden*2
+        else:
+            dim_classifier_input=enc_dim_lstm_hidden
 
-    def forward(self, x):
-        pass
+        self.encoder=RNN_encoder(dim_input, enc_dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer)
+
+        # classifier
+        self.classifier=RNN_classifier(dim_input=dim_classifier_input, dim_lstm_hidden=clf_dim_lstm_hidden, dim_fc_hidden=clf_dim_fc_hidden, dim_output=clf_dim_output)
+
+    def forward(self, x, clf_hidden):
+        # through encoder
+        x = self.encoder(x)
+        x = x.unsqueeze(0)
+        logits, clf_hidden = self.classifier(x, clf_hidden)
+
+        return logits, clf_hidden
 
 if __name__ == '__main__':
     mylayer = pooling_layer(reduce='mean')
