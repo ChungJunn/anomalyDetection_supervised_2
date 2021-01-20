@@ -116,6 +116,7 @@ class RNN_encoder(nn.Module):
         self.pooling_layer=pooling_layer(reduce=reduce)
         self.use_feature_mapping = use_feature_mapping
         self.dim_feature_mapping = dim_feature_mapping
+        self.att1 = nn.Linear(dim_lstm_hidden, dim_lstm_hidden ,bias=False)
 
         # fm layer
         if use_feature_mapping == 1:
@@ -147,9 +148,28 @@ class RNN_encoder(nn.Module):
 
         x, hidden = self.lstm_layer(x, None)
 
-        # pooling layer 
-        x = self.pooling_layer(x)
-        x = x.squeeze(0) # squeeze node-dimension
+        # TODO : assume uni-directional rnn
+        # x: Tx Bn E
+        # make V 
+        enc_out = x[-1,:,:] # Bn E
+        V = self.att1(enc_out) # Bn E
+
+        # obtain alpha
+        alphas=[]
+        for i in range(V.size(0)):
+            alpha = torch.matmul(x[:,i,:],V[i,:])
+            alpha = alpha - torch.max(alpha)
+            alpha = torch.exp(alpha)
+            alpha = alpha / (torch.sum(alpha) + 1e-15)
+            alphas.append(alpha)
+        alpha = torch.stack(alphas, dim=1).unsqueeze(-1)
+        alpha = alpha.expand(alpha.size(0), alpha.size(1), x.size(-1))
+
+        #3.obtain attention output 
+        x = torch.sum(alpha * x, dim=0)
+
+        #x = self.pooling_layer(x)
+        #x = x.squeeze(0) # squeeze node-dimension
 
         return x
 
