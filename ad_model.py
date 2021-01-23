@@ -111,12 +111,30 @@ class AD_SUP2_MODEL3(nn.Module):
         return logits
 
 class RNN_encoder(nn.Module):
-    def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer):
+    def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer, dim_att):
         super(RNN_encoder, self).__init__()
-        self.pooling_layer=pooling_layer(reduce=reduce)
+        self.reduce = reduce
         self.use_feature_mapping = use_feature_mapping
         self.dim_feature_mapping = dim_feature_mapping
-        self.att1 = nn.Linear(dim_lstm_hidden, dim_lstm_hidden ,bias=False)
+
+        if self.reduce == "self-attention":
+            if bidirectional == 1:
+                dim_att_in = 2 * dim_lstm_hidden
+            elif bidirectional == 0:
+                dim_att_in = dim_lstm_hidden
+            else:
+                print("bidirectional must be either 0 or 1")
+                import sys; sys.exit(-1)
+
+            self.dim_att = dim_att
+            self.att1 = nn.Linear(dim_att_in, self.dim_att)
+            self.att2 = nn.Linear(self.dim_att, 1)
+
+        elif self.reduce == 'max' or self.reduce == 'mean':
+            self.pooling_layer=pooling_layer(reduce=reduce)
+        else:
+            print("reduce must be either max, mean, or self-attention")
+            import sys; sys.exit(-1)
 
         # fm layer
         if use_feature_mapping == 1:
@@ -146,32 +164,23 @@ class RNN_encoder(nn.Module):
             x = self.fm_layer(x)
             x = x.view(Tx,Bn,self.dim_feature_mapping)
 
-        x, hidden = self.lstm_layer(x, None)
+        ctx, hidden = self.lstm_layer(x, None)
 
         # TODO : assume uni-directional rnn
-        # x: Tx Bn E
-        # make V 
-        enc_out = x[-1,:,:] # Bn E
-        V = self.att1(enc_out) # Bn E
+        if self.reduce == "self-attention":
+            att1 = torch.tanh(self.att1(ctx))
+            att2 = self.att2(att1).view(Tx, Bn)
 
-        # obtain alpha
-        alphas=[]
-        for i in range(V.size(0)):
-            alpha = torch.matmul(x[:,i,:],V[i,:])
-            alpha = alpha - torch.max(alpha)
+            alpha = att2 - torch.max(att2)
             alpha = torch.exp(alpha)
-            alpha = alpha / (torch.sum(alpha) + 1e-15)
-            alphas.append(alpha)
-        alpha = torch.stack(alphas, dim=1).unsqueeze(-1)
-        alpha = alpha.expand(alpha.size(0), alpha.size(1), x.size(-1))
 
-        #3.obtain attention output 
-        x = torch.sum(alpha * x, dim=0)
+            alpha = alpha / (torch.sum(alpha, dim=0, keepdim=True) + 1e-15)
+            enc_out = torch.sum(alpha.unsqueeze(2) * ctx, dim=0)
+        else:
+            out = self.pooling_layer(ctx)
+            enc_out = out.squeeze(0) # squeeze node-dimension
 
-        #x = self.pooling_layer(x)
-        #x = x.squeeze(0) # squeeze node-dimension
-
-        return x
+        return enc_out
 
 class Transformer_encoder(nn.Module):
     def __init__(self, dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer):
@@ -209,7 +218,7 @@ class Transformer_encoder(nn.Module):
         return x
 
 class AD_SUP2_MODEL2(nn.Module):
-    def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer):
+    def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer, dim_att):
         super(AD_SUP2_MODEL2, self).__init__()
 
         if bidirectional==1:
@@ -217,7 +226,7 @@ class AD_SUP2_MODEL2(nn.Module):
         else:
             dim_classifier_input=dim_lstm_hidden
 
-        self.encoder=RNN_encoder(dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer)
+        self.encoder=RNN_encoder(dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer, dim_att)
 
         self.classifier=DNN_classifier(dim_input=dim_classifier_input)
 

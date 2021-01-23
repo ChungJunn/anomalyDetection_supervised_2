@@ -16,3 +16,4 @@ script*
 script/*
 *.exp*.sh
 none_result/*
+test.py

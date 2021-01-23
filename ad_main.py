@@ -50,7 +50,7 @@ def train_main(args, neptune):
     if args.encoder=='none':
         model = AD_SUP2_MODEL1(reduce=args.reduce, dim_input=args.dim_input).to(device)
     elif args.encoder=='rnn' or args.encoder=='bidirectionalrnn':
-        model = AD_SUP2_MODEL2(dim_input=args.dim_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer).to(device)
+        model = AD_SUP2_MODEL2(dim_input=args.dim_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer,dim_att=args.dim_att).to(device)
     elif args.encoder=='transformer':
         model = AD_SUP2_MODEL3(dim_input=args.dim_input, nhead=args.nhead, dim_feedforward=args.dim_feedforward, reduce=args.reduce, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer).to(device)
     else:
@@ -87,7 +87,7 @@ def train_main(args, neptune):
         for li, (anno, label, end_of_data) in enumerate(trainiter):
             anno = anno.to(dtype=torch.float32, device=device)
             label = label.to(dtype=torch.int64, device=device)
-        
+
             optimizer.zero_grad()
 
             output = model(anno)
@@ -99,14 +99,13 @@ def train_main(args, neptune):
             # optimizer
             optimizer.step()
             train_loss += loss.item()
-        
-            if li % log_interval == (log_interval - 1):
-                train_loss = train_loss / log_interval
-                print('epoch: {:d} | li: {:d} | train_loss: {:.4f}'.format(ei+1, li+1, train_loss))
-                if neptune is not None: neptune.log_metric('train loss', (ei*n_samples)+(li+1), train_loss)
-                train_loss = 0
 
             if end_of_data == 1: break
+
+        train_loss = train_loss / li
+        print('epoch: {:d} | train_loss: {:.4f}'.format(ei+1, train_loss))
+        if neptune is not None: neptune.log_metric('train loss', ei, train_loss)
+        train_loss = 0.0
 
         # evaluation code
         # valid_loss = validate(model, valiter, device, criterion)
@@ -163,10 +162,12 @@ if __name__ == '__main__':
     # RNN params
     parser.add_argument('--bidirectional', type=int)
     parser.add_argument('--dim_lstm_hidden', type=int)
-    parser.add_argument('--use_feature_mapping', type=int)
-    parser.add_argument('--dim_feature_mapping', type=int)
+    parser.add_argument('--dim_att', type=int)
+
     # RNN and Transformer param
     parser.add_argument('--nlayer', type=int)
+    parser.add_argument('--use_feature_mapping', type=int)
+    parser.add_argument('--dim_feature_mapping', type=int)
     # Transformer params 
     parser.add_argument('--nhead', type=int)
     parser.add_argument('--dim_feedforward', type=int)
