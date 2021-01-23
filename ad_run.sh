@@ -1,22 +1,22 @@
 #!/bin/bash
-EXP_NAME='21.01.23.exp1.debug'
+EXP_NAME='21.01.23.exp2'
 
 # Model
-ENCODER='rnn' # rnn, transformer, none
-BIDIRECTIONAL=$2
+ENCODER='transformer' # rnn, transformer, none
+BIDIRECTIONAL=-1
 
-DATASET=$3 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 BATCH_SIZE=64
 DIM_LSTM_HIDDEN=64
 DIM_ATT=$DIM_LSTM_HIDDEN
 
-USE_FEATURE_MAPPING=$4
-DIM_FEATURE_MAPPING=$5
+USE_FEATURE_MAPPING=1
+DIM_FEATURE_MAPPING=24
 
 NLAYER=1
 OPTIMIZER='Adam'
 LR=0.001
-REDUCE='self-attention' # mean, max, or self-attention
+REDUCE='max' # mean, max, or self-attention
 NHEAD=2
 DIM_FEEDFORWARD=128
 

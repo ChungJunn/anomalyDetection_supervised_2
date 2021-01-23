@@ -189,6 +189,7 @@ class Transformer_encoder(nn.Module):
         self.pooling_layer=pooling_layer(reduce=reduce)
 
         from torch.nn import TransformerEncoderLayer, TransformerEncoder
+        from libs.layers import PositionalEncoding
         self.use_feature_mapping = use_feature_mapping
         self.dim_feature_mapping = dim_feature_mapping
 
@@ -199,6 +200,7 @@ class Transformer_encoder(nn.Module):
         else:
             d_model = dim_input
 
+        self.positionalEncoding = PositionalEncoding(d_model=d_model)
         self.t_layer = TransformerEncoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward)
         self.t_layers = TransformerEncoder(encoder_layer=self.t_layer, num_layers=nlayer)
 
@@ -210,6 +212,8 @@ class Transformer_encoder(nn.Module):
             x = x.contiguous().view(Tx*Bn,D)
             x = self.fm_layer(x)
             x = x.view(Tx,Bn,self.dim_feature_mapping)
+
+        x = self.positionalEncoding(x)
 
         x = self.t_layers(x)
 
