@@ -120,6 +120,7 @@ class RNN_encoder(nn.Module):
         if self.reduce == "self-attention":
             if bidirectional == 1:
                 dim_att_in = 2 * dim_lstm_hidden
+                dim_att = 2 * dim_att
             elif bidirectional == 0:
                 dim_att_in = dim_lstm_hidden
             else:

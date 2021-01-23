@@ -3,20 +3,20 @@ EXP_NAME='21.01.23.exp1.debug'
 
 # Model
 ENCODER='rnn' # rnn, transformer, none
-BIDIRECTIONAL=1
+BIDIRECTIONAL=$2
 
-DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DATASET=$3 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 BATCH_SIZE=64
 DIM_LSTM_HIDDEN=64
-DIM_ATT=64
+DIM_ATT=$DIM_LSTM_HIDDEN
 
-USE_FEATURE_MAPPING=0
-DIM_FEATURE_MAPPING=-1
+USE_FEATURE_MAPPING=$4
+DIM_FEATURE_MAPPING=$5
 
 NLAYER=1
 OPTIMIZER='Adam'
 LR=0.001
-REDUCE='mean' # mean, max, or self-attention
+REDUCE='self-attention' # mean, max, or self-attention
 NHEAD=2
 DIM_FEEDFORWARD=128
 
@@ -49,8 +49,8 @@ else
 fi
 
 export CUDA_VISIBLE_DEVICES=$1
-#for i in 1 2 3 4 5
-#do
+for i in 1 2 3 4 5
+do
     python3 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
@@ -78,4 +78,4 @@ export CUDA_VISIBLE_DEVICES=$1
                         --encoder=$ENCODER \
                         --dim_att=$DIM_ATT
 
-#done
+done
