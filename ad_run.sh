@@ -1,11 +1,11 @@
 #!/bin/bash
-EXP_NAME='21.01.23.exp2'
+EXP_NAME='21.01.23.exp3.debug'
 
 # Model
 ENCODER='transformer' # rnn, transformer, none
 BIDIRECTIONAL=-1
 
-DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 BATCH_SIZE=64
 DIM_LSTM_HIDDEN=64
 DIM_ATT=$DIM_LSTM_HIDDEN
@@ -16,7 +16,7 @@ DIM_FEATURE_MAPPING=24
 NLAYER=1
 OPTIMIZER='Adam'
 LR=0.001
-REDUCE='max' # mean, max, or self-attention
+REDUCE='self-attention' # mean, max, or self-attention
 NHEAD=2
 DIM_FEEDFORWARD=128
 

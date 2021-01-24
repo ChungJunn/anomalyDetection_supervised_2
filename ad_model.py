@@ -3,6 +3,8 @@ import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 from torch.autograd import Variable
+from torch.nn import TransformerEncoderLayer, TransformerEncoder
+from libs.layers import PositionalEncoding
 
 class RNN_classifier(nn.Module):
     def __init__(self, dim_input, dim_lstm_hidden, dim_fc_hidden, dim_output):
@@ -94,14 +96,14 @@ class pooling_layer:
         return layer_out
 
 class AD_SUP2_MODEL3(nn.Module):
-    def __init__(self, dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer):
+    def __init__(self, dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer, dim_att):
         super(AD_SUP2_MODEL3, self).__init__()
         if use_feature_mapping:
             d_model = dim_feature_mapping
         else:
             d_model = dim_input
 
-        self.encoder=Transformer_encoder(dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer)
+        self.encoder=Transformer_encoder(dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer, dim_att)
         self.classifier=DNN_classifier(dim_input=d_model)
 
     def forward(self, x):
@@ -184,12 +186,9 @@ class RNN_encoder(nn.Module):
         return enc_out
 
 class Transformer_encoder(nn.Module):
-    def __init__(self, dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer):
+    def __init__(self, dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer, dim_att):
         super(Transformer_encoder, self).__init__()
-        self.pooling_layer=pooling_layer(reduce=reduce)
-
-        from torch.nn import TransformerEncoderLayer, TransformerEncoder
-        from libs.layers import PositionalEncoding
+        self.reduce=reduce
         self.use_feature_mapping = use_feature_mapping
         self.dim_feature_mapping = dim_feature_mapping
 
@@ -199,6 +198,18 @@ class Transformer_encoder(nn.Module):
             d_model = self.dim_feature_mapping
         else:
             d_model = dim_input
+
+        # self-attention
+        if self.reduce == "self-attention":
+            self.dim_att = d_model
+            self.dim_att_in = d_model
+            self.att1 = nn.Linear(self.dim_att_in, self.dim_att)
+            self.att2 = nn.Linear(self.dim_att, 1)
+        elif self.reduce == 'max' or self.reduce == 'mean':
+            self.pooling_layer=pooling_layer(reduce=reduce)
+        else:
+            print("reduce must be either max, mean, or self-attention")
+            import sys; sys.exit(-1)
 
         self.positionalEncoding = PositionalEncoding(d_model=d_model)
         self.t_layer = TransformerEncoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward)
@@ -214,13 +225,22 @@ class Transformer_encoder(nn.Module):
             x = x.view(Tx,Bn,self.dim_feature_mapping)
 
         x = self.positionalEncoding(x)
+        ctx = self.t_layers(x)
 
-        x = self.t_layers(x)
+        if self.reduce == "self-attention":
+            att1 = torch.tanh(self.att1(ctx))
+            att2 = self.att2(att1).view(Tx, Bn)
 
-        x = self.pooling_layer(x)
-        x = x.squeeze(0)
+            alpha = att2 - torch.max(att2)
+            alpha = torch.exp(alpha)
 
-        return x
+            alpha = alpha / (torch.sum(alpha, dim=0, keepdim=True) + 1e-15)
+            enc_out = torch.sum(alpha.unsqueeze(2) * ctx, dim=0)
+        else:
+            out = self.pooling_layer(ctx)
+            enc_out = out.squeeze(0) # squeeze node-dimension
+
+        return enc_out
 
 class AD_SUP2_MODEL2(nn.Module):
     def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer, dim_att):
