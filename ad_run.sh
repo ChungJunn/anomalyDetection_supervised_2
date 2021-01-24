@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='21.01.23.exp1.debug'
+EXP_NAME='21.01.23.exp1'
 
 # Model
 ENCODER='rnn' # rnn, transformer, none
