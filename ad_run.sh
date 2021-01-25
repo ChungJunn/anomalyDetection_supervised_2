@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='21.01.23.exp3'
+EXP_NAME='21.01.23.exp2'
 
 # Model
 ENCODER='transformer' # rnn, transformer, none
@@ -16,7 +16,7 @@ DIM_FEATURE_MAPPING=24
 NLAYER=1
 OPTIMIZER='Adam'
 LR=0.001
-REDUCE='self-attention' # mean, max, or self-attention
+REDUCE='max' # mean, max, or self-attention
 NHEAD=2
 DIM_FEEDFORWARD=128
 
