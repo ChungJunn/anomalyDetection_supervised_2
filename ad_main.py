@@ -127,13 +127,20 @@ def train_main(args, neptune):
             print('bad counter == %d' % (bc))
 
     model = torch.load(savedir)
+    
+    from ad_test import test
+    datasets = ['cnsm_exp1', 'cnsm_exp2_1', 'cnsm_exp2_2']
+    for dset in datasets:
+        test(model, dset, args.batch_size, device, neptune)
+    
+    '''
     acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=neptune)
-
     if neptune is not None:
         neptune.set_property('acc', acc)
         neptune.set_property('prec', prec)
         neptune.set_property('rec', rec)
         neptune.set_property('f1', f1)
+    '''
 
     return
 

@@ -8,6 +8,7 @@ from ad_model import AD_SUP2_MODEL1
 '''
 eval loads model trained from different datset and measure detection performance in another dataset
 '''
+'''
 if __name__ == '__main__':
     # argparse
     parser = argparse.ArgumentParser()
@@ -70,4 +71,57 @@ if __name__ == '__main__':
     neptune.set_property('prec', prec)
     neptune.set_property('rec', rec)
     neptune.set_property('f1', f1)
+'''
 
+def test(model, dataset, batch_size, device, neptune):
+    # obtain data_dir
+    import os
+    data_dir = os.environ['HOME'] + '/autoregressor/data/' + dataset + '_data/gnn_data/'
+
+    # load different dataset and create dataloader
+    csvs = ['dummy', 'rnn_len16.fw.csv','rnn_len16.ids.csv',
+            'rnn_len16.flowmon.csv','rnn_len16.dpi.csv',
+            'rnn_len16.lb.csv']
+    csv_label = 'rnn_len16.label.csv'
+
+    if dataset == 'cnsm_exp1':
+        csv_files = csvs
+        csv_files.append(csv_label)
+
+    elif dataset == 'cnsm_exp2_1' or dataset == 'cnsm_exp2_2':
+        csv_files=[]
+        ns = [1,3,4,2]
+        for n in ns:
+            csv_files.append(csvs[n])
+        csv_files.append(csv_label)
+    else:
+        print('in test(): dataset must be either \'cnsm_exp1\', \'cnsm_exp2_1\', \'cnsm_exp2_2\'')
+        import sys; sys.exit(-1)
+
+    from ad_data import AD_SUP2_ITERATOR
+    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=data_dir, csv_files=csv_files, batch_size=batch_size)
+
+    # evaluate the model and measure performance 
+    acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=None)
+
+    # print results and logging
+    print('acc: {:.4f} | prec: {:.4f} | rec: {:.4f} | f1: {:.4f}'.format(acc, prec, rec, f1))
+    if neptune is not None:
+        neptune.set_property('acc', acc)
+        neptune.set_property('prec', prec)
+        neptune.set_property('rec', rec)
+        neptune.set_property('f1', f1)
+
+    return
+
+if __name__ == '__main__':
+    device = torch.device('cuda')
+    from ad_model import AD_SUP2_MODEL3
+    model = AD_SUP2_MODEL3(22, 2, 128, 'self-attention', 1, 22, 1, 22).to(device)
+
+    dataset = 'cnsm_exp2_2'
+
+    batch_size = 32
+    neptune=None
+
+    test(model, dataset, batch_size, device, neptune)
