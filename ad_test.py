@@ -62,7 +62,7 @@ if __name__ == '__main__':
     from ad_data import AD_SUP2_ITERATOR
     testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files, batch_size=args.batch_size)
 
-    # evaluate the model and measure performance 
+    # evaluate the model and measure performance
     acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=None)
 
     # print results and logging
@@ -79,7 +79,7 @@ def test(model, dataset, batch_size, device, neptune):
     data_dir = os.environ['HOME'] + '/autoregressor/data/' + dataset + '_data/gnn_data/'
 
     # load different dataset and create dataloader
-    csvs = ['dummy', 'rnn_len16.fw.csv','rnn_len16.ids.csv',
+    csvs = ['rnn_len16.fw.csv','rnn_len16.ids.csv',
             'rnn_len16.flowmon.csv','rnn_len16.dpi.csv',
             'rnn_len16.lb.csv']
     csv_label = 'rnn_len16.label.csv'
@@ -90,7 +90,7 @@ def test(model, dataset, batch_size, device, neptune):
 
     elif dataset == 'cnsm_exp2_1' or dataset == 'cnsm_exp2_2':
         csv_files=[]
-        ns = [1,3,4,2]
+        ns = [0,2,3,1] # hard-coding
         for n in ns:
             csv_files.append(csvs[n])
         csv_files.append(csv_label)
@@ -112,7 +112,7 @@ def test(model, dataset, batch_size, device, neptune):
         neptune.set_property('rec', rec)
         neptune.set_property('f1', f1)
 
-    return
+    return acc, prec, rec, f1
 
 if __name__ == '__main__':
     device = torch.device('cuda')

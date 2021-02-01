@@ -1,28 +1,28 @@
 #!/bin/bash
-EXP_NAME='21.01.23.exp3.debug'
+EXP_NAME='21.02.01.exp1'
 
 # Model
-ENCODER='transformer' # rnn, transformer, none
-BIDIRECTIONAL=-1
+ENCODER=$2 # rnn, transformer, none
+BIDIRECTIONAL=1
 
-DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DATASET=$3 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 BATCH_SIZE=64
-DIM_LSTM_HIDDEN=64
+DIM_LSTM_HIDDEN=$4
 DIM_ATT=$DIM_LSTM_HIDDEN
 
 USE_FEATURE_MAPPING=1
-DIM_FEATURE_MAPPING=24
+DIM_FEATURE_MAPPING=$5
 
 NLAYER=1
 OPTIMIZER='Adam'
 LR=0.001
 REDUCE='self-attention' # mean, max, or self-attention
-NHEAD=2
+NHEAD=3
 DIM_FEEDFORWARD=128
 
 # other fixed params
 PATIENCE=20
-MAX_EPOCH=2000
+MAX_EPOCH=1000
 DIM_INPUT=22
 
 # check dataset and set csv paths
