@@ -24,7 +24,7 @@ DIM_FEEDFORWARD=128
 
 # other fixed params
 PATIENCE=20
-MAX_EPOCH=2000
+MAX_EPOCH=1000
 DIM_INPUT=22
 
 # check dataset and set csv paths
@@ -40,7 +40,7 @@ CSV_LABEL='rnn_len16.label.csv'
     
 N_NODES=5
 
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=6
 
 python3 ad_dual_main.py  --data_dir=$DATA_DIR \
                     --data_dir2=$DATA_DIR2 \

@@ -96,14 +96,14 @@ class pooling_layer:
         return layer_out
 
 class AD_SUP2_MODEL3(nn.Module):
-    def __init__(self, dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer, dim_att):
+    def __init__(self, dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer):
         super(AD_SUP2_MODEL3, self).__init__()
         if use_feature_mapping:
             d_model = dim_feature_mapping
         else:
             d_model = dim_input
 
-        self.encoder=Transformer_encoder(dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer, dim_att)
+        self.encoder=Transformer_encoder(dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer)
         self.classifier=DNN_classifier(dim_input=d_model)
 
     def forward(self, x):
@@ -186,7 +186,7 @@ class RNN_encoder(nn.Module):
         return enc_out
 
 class Transformer_encoder(nn.Module):
-    def __init__(self, dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer, dim_att):
+    def __init__(self, dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer):
         super(Transformer_encoder, self).__init__()
         self.reduce=reduce
         self.use_feature_mapping = use_feature_mapping
