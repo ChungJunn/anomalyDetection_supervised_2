@@ -1,5 +1,6 @@
 #!/bin/bash
 EXP_NAME='21.02.01.exp1'
+TUNE=0
 
 # Model
 ENCODER=$2 # rnn, transformer, none
@@ -22,7 +23,7 @@ DIM_FEEDFORWARD=128
 
 # other fixed params
 PATIENCE=20
-MAX_EPOCH=1000
+MAX_EPOCH=3
 DIM_INPUT=22
 
 # check dataset and set csv paths
@@ -76,6 +77,7 @@ do
                         --dim_feedforward=$DIM_FEEDFORWARD \
                         --dim_input=$DIM_INPUT \
                         --encoder=$ENCODER \
-                        --dim_att=$DIM_ATT
+                        --dim_att=$DIM_ATT \
+                        --tune=$TUNE
 
 done

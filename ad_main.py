@@ -23,6 +23,8 @@ from ad_model import AD_SUP2_MODEL3
 from ad_data import AD_SUP2_ITERATOR
 from ad_eval import eval_main
 
+from ray import tune
+
 def validate(model, validiter, device, criterion):
     valid_loss = 0.0
 
@@ -80,7 +82,8 @@ def train_main(args, neptune):
     log_interval=1000
     bc = 0
     best_val_f1 = None
-    savedir = './result/' + args.out_file
+    if args.tune == 0:
+        savedir = './result/' + args.out_file
     n_samples = trainiter.n_samples
 
     for ei in range(args.max_epoch):
@@ -113,9 +116,19 @@ def train_main(args, neptune):
         print('epoch: {:d} | valid_f1: {:.4f}'.format(ei+1, f1))
         if neptune is not None: neptune.log_metric('valid f1', ei, f1)
 
+        # if tune, report the metrics / also test metric every 5 epochs
+        if args.tune == 1:
+            tune.report(train_loss=train_loss, val_f1=f1, test_f1=-1)
+            if ei % args.test_log_interval == (args.test_log_interval-1):
+                test_acc,test_prec,test_rec,test_f1=eval_main(model,testiter,device,neptune=None)
+                tune.report(train_loss=train_loss, val_f1=f1, test_f1=test_f1)
+
+        # if tune, do not save model files
+
         # need to implement early-stop
         if ei == 0 or f1 > best_val_f1:
-            torch.save(model, savedir)
+            if args.tune == 0:
+                torch.save(model, savedir)
             bc = 0
             best_val_f1=f1
             print('found new best model')
@@ -126,20 +139,19 @@ def train_main(args, neptune):
                 break
             print('bad counter == %d' % (bc))
 
-    model = torch.load(savedir)
-    
-    from ad_test import test
-    datasets = ['cnsm_exp1', 'cnsm_exp2_1', 'cnsm_exp2_2']
-    for dset in datasets:
-        acc, prec, rec, f1 = test(model, dset, args.batch_size, device, neptune)
+    if args.tune == 0:
+        model = torch.load(savedir)
+        
+        from ad_test import test
+        datasets = ['cnsm_exp1', 'cnsm_exp2_1', 'cnsm_exp2_2']
+        for dset in datasets:
+            acc, prec, rec, f1 = test(model, dset, args.batch_size, device, neptune)
 
-        if neptune is not None:
-            neptune.set_property(dset+'_acc', acc)
-            neptune.set_property(dset+'_prec', prec)
-            neptune.set_property(dset+'_rec', rec)
-            neptune.set_property(dset+'_f1', f1)
-            
-    #acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=neptune)
+            if neptune is not None:
+                neptune.set_property(dset+'_acc', acc)
+                neptune.set_property(dset+'_prec', prec)
+                neptune.set_property(dset+'_rec', rec)
+                neptune.set_property(dset+'_f1', f1)
 
     return
 
@@ -163,13 +175,13 @@ if __name__ == '__main__':
     parser.add_argument('--max_epoch', type=int)
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--encoder', type=str)
+    parser.add_argument('--tune', type=int)
     # Simple model params
     parser.add_argument('--dim_input', type=int)
     # RNN params
     parser.add_argument('--bidirectional', type=int)
     parser.add_argument('--dim_lstm_hidden', type=int)
     parser.add_argument('--dim_att', type=int)
-
     # RNN and Transformer param
     parser.add_argument('--nlayer', type=int)
     parser.add_argument('--use_feature_mapping', type=int)
