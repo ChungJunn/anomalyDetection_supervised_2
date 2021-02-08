@@ -52,7 +52,10 @@ if __name__=="__main__":
 
     args = parser.parse_args()
 
-    name = args.dataset + '.' + args.encoder
+    if args.encoder == 'rnn' and args.bidirectional == 1:
+        name = args.dataset + '.' + 'bidirectionalrnn'
+    else:
+        name = args.dataset + '.' + args.encoder
 
     if args.encoder=='none':
         config = {

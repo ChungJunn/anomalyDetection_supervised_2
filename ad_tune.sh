@@ -43,7 +43,7 @@ else
     N_NODES=4
 fi
 
-python3 ad_main_tune.py  --data_dir=$DATA_DIR \
+/usr/bin/python3.8 ad_main_tune.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
                         --csv3=$CSV3 \
