@@ -194,7 +194,6 @@ if __name__ == '__main__':
     parser.add_argument('--dim_lstm_hidden', type=int)
     parser.add_argument('--use_feature_mapping', type=int)
     parser.add_argument('--dim_feature_mapping', type=int)
-    parser.add_argument('--dim_att', type=int)
     # RNN and Transformer param
     parser.add_argument('--nlayer', type=int)
     parser.add_argument('--dim_att', type=int)

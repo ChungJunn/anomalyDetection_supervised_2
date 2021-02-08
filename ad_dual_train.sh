@@ -1,26 +1,26 @@
 #!/bin/bash
-EXP_NAME='21.02.01.debug'
+EXP_NAME='21.02.08.exp4'
 
 # Weight for combined_loss
 ALPHA=0.5
 
 # Model
-ENCODER='rnn' # rnn, transformer, none
-BIDIRECTIONAL=1
+ENCODER=$2 # rnn, transformer, none
+BIDIRECTIONAL=$3
 
 BATCH_SIZE=64
-DIM_LSTM_HIDDEN=64
+DIM_LSTM_HIDDEN=$4
 DIM_ATT=$DIM_LSTM_HIDDEN
 
 USE_FEATURE_MAPPING=1
 DIM_FEATURE_MAPPING=24
 
-NLAYER=1
+NLAYER=$5
 OPTIMIZER='Adam'
 LR=0.001
-REDUCE='max' # mean, max, or last_hidden
-NHEAD=2
-DIM_FEEDFORWARD=128
+REDUCE='self-attention' # mean, max, or last_hidden
+NHEAD=4
+DIM_FEEDFORWARD=48
 
 # other fixed params
 PATIENCE=20
@@ -40,9 +40,9 @@ CSV_LABEL='rnn_len16.label.csv'
     
 N_NODES=5
 
-export CUDA_VISIBLE_DEVICES=6
+export CUDA_VISIBLE_DEVICES=$1
 
-python3 ad_dual_main.py  --data_dir=$DATA_DIR \
+/usr/bin/python3.8 ad_dual_main.py  --data_dir=$DATA_DIR \
                     --data_dir2=$DATA_DIR2 \
                     --csv1=$CSV1 \
                     --csv2=$CSV2 \
@@ -68,4 +68,5 @@ python3 ad_dual_main.py  --data_dir=$DATA_DIR \
                     --dim_feedforward=$DIM_FEEDFORWARD \
                     --dim_input=$DIM_INPUT \
                     --encoder=$ENCODER \
+                    --dim_att=$DIM_ATT \
                     --alpha=$ALPHA
