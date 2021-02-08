@@ -1,29 +1,29 @@
 #!/bin/bash
-EXP_NAME='21.02.01.exp1'
+EXP_NAME='21.02.08.exp1'
 TUNE=0
 
 # Model
 ENCODER=$2 # rnn, transformer, none
-BIDIRECTIONAL=1
+BIDIRECTIONAL=$3
 
-DATASET=$3 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DATASET=$4 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 BATCH_SIZE=64
-DIM_LSTM_HIDDEN=$4
+DIM_LSTM_HIDDEN=$5
 DIM_ATT=$DIM_LSTM_HIDDEN
 
 USE_FEATURE_MAPPING=1
-DIM_FEATURE_MAPPING=$5
+DIM_FEATURE_MAPPING=24
 
-NLAYER=1
+NLAYER=$6
 OPTIMIZER='Adam'
 LR=0.001
 REDUCE='self-attention' # mean, max, or self-attention
-NHEAD=3
-DIM_FEEDFORWARD=128
+NHEAD=4
+DIM_FEEDFORWARD=48
 
 # other fixed params
 PATIENCE=20
-MAX_EPOCH=3
+MAX_EPOCH=1000
 DIM_INPUT=22
 
 # check dataset and set csv paths
@@ -52,7 +52,7 @@ fi
 export CUDA_VISIBLE_DEVICES=$1
 for i in 1 2 3 4 5
 do
-    python3 ad_main.py  --data_dir=$DATA_DIR \
+    /usr/bin/python3.8 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
                         --csv3=$CSV3 \
