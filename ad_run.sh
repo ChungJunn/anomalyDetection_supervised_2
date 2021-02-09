@@ -3,23 +3,23 @@ EXP_NAME='21.02.08.exp1'
 TUNE=0
 
 # Model
-ENCODER='dnn' # rnn, transformer, none, dnn
-BIDIRECTIONAL=-1
+ENCODER='transformer' # rnn, transformer, none, dnn
+BIDIRECTIONAL=0
 
 DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 BATCH_SIZE=64
-DIM_LSTM_HIDDEN=-1
+DIM_LSTM_HIDDEN=32
 DIM_ATT=$DIM_LSTM_HIDDEN
 
-USE_FEATURE_MAPPING=-1
-DIM_FEATURE_MAPPING=-1
+USE_FEATURE_MAPPING=1
+DIM_FEATURE_MAPPING=24
 
-NLAYER=-1
+NLAYER=3
 OPTIMIZER='Adam'
 LR=0.001
-REDUCE='' # mean, max, or self-attention
-NHEAD=-1
-DIM_FEEDFORWARD=-1
+REDUCE='self-attention' # mean, max, or self-attention
+NHEAD=4
+DIM_FEEDFORWARD=48
 
 # DNN-enc params
 DIM_ENC=24
