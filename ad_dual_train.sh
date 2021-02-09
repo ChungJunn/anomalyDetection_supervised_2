@@ -1,22 +1,22 @@
 #!/bin/bash
-EXP_NAME='21.02.09.exp5'
+EXP_NAME='21.02.09.exp4'
 
 # Weight for combined_loss
 ALPHA=0.5
 
 # Model
-ENCODER='dnn' # rnn, transformer, none
-BIDIRECTIONAL=-1
+ENCODER=$2 # rnn, transformer, none
+BIDIRECTIONAL=$3
 
 BATCH_SIZE=64
-DIM_ENC=24
-DIM_LSTM_HIDDEN=-1
+DIM_ENC=-1
+DIM_LSTM_HIDDEN=$4
 DIM_ATT=$DIM_LSTM_HIDDEN
 
 USE_FEATURE_MAPPING=1
 DIM_FEATURE_MAPPING=24
 
-NLAYER=-1
+NLAYER=3
 OPTIMIZER='Adam'
 LR=0.001
 REDUCE='self-attention' # mean, max, or last_hidden
