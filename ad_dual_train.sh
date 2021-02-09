@@ -43,7 +43,7 @@ N_NODES=5
 
 export CUDA_VISIBLE_DEVICES=$1
 
-for i in 1 2 
+for i in 1 2 3 4 5 
 do
 /usr/bin/python3.8 ad_dual_main.py  --data_dir=$DATA_DIR \
                     --data_dir2=$DATA_DIR2 \
