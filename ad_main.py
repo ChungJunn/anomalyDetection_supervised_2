@@ -20,6 +20,7 @@ import neptune
 from ad_model import AD_SUP2_MODEL1
 from ad_model import AD_SUP2_MODEL2
 from ad_model import AD_SUP2_MODEL3
+from ad_model import AD_SUP2_MODEL5
 from ad_data import AD_SUP2_ITERATOR
 from ad_eval import eval_main
 
@@ -55,6 +56,8 @@ def train_main(args, neptune):
         model = AD_SUP2_MODEL2(dim_input=args.dim_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer,dim_att=args.dim_att).to(device)
     elif args.encoder=='transformer':
         model = AD_SUP2_MODEL3(dim_input=args.dim_input, nhead=args.nhead, dim_feedforward=args.dim_feedforward, reduce=args.reduce, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer).to(device)
+    elif args.encoder=='dnn':
+        model = AD_SUP2_MODEL5(dim_input=args.dim_input, dim_enc=args.dim_enc).to(device)
     else:
         print("model must be either \'none\', \'rnn\', \'transformer\'")
         sys.exit(0)
@@ -189,6 +192,8 @@ if __name__ == '__main__':
     # Transformer params 
     parser.add_argument('--nhead', type=int)
     parser.add_argument('--dim_feedforward', type=int)
+    # DNN-enc params
+    parser.add_argument('--dim_enc', type=int)
 
     args = parser.parse_args()
 

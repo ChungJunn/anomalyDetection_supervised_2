@@ -3,12 +3,12 @@ EXP_NAME='21.02.09.exp1'
 TUNE=0
 
 # Model
-ENCODER=$2 # rnn, transformer, none
-BIDIRECTIONAL=$3
+ENCODER='transformer' # rnn, transformer, none, dnn
+BIDIRECTIONAL=0
 
-DATASET=$4 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 BATCH_SIZE=64
-DIM_LSTM_HIDDEN=$5
+DIM_LSTM_HIDDEN=32
 DIM_ATT=$DIM_LSTM_HIDDEN
 
 USE_FEATURE_MAPPING=1
@@ -20,6 +20,9 @@ LR=0.001
 REDUCE='self-attention' # mean, max, or self-attention
 NHEAD=4
 DIM_FEEDFORWARD=48
+
+# DNN-enc params
+DIM_ENC=24
 
 # other fixed params
 PATIENCE=20
@@ -52,7 +55,7 @@ fi
 export CUDA_VISIBLE_DEVICES=$1
 for i in 1 2 3
 do
-    /usr/bin/python3.8 ad_main.py  --data_dir=$DATA_DIR \
+    python3 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
                         --csv3=$CSV3 \
@@ -78,6 +81,6 @@ do
                         --dim_input=$DIM_INPUT \
                         --encoder=$ENCODER \
                         --dim_att=$DIM_ATT \
-                        --tune=$TUNE
-
+                        --tune=$TUNE \
+                        --dim_enc=$DIM_ENC
 done

@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='21.02.08.exp4'
+EXP_NAME='21.02.09.exp4'
 
 # Weight for combined_loss
 ALPHA=0.5
@@ -9,13 +9,14 @@ ENCODER=$2 # rnn, transformer, none
 BIDIRECTIONAL=$3
 
 BATCH_SIZE=64
+DIM_ENC=-1
 DIM_LSTM_HIDDEN=$4
 DIM_ATT=$DIM_LSTM_HIDDEN
 
 USE_FEATURE_MAPPING=1
-DIM_FEATURE_MAPPING=24
+DIM_FEATURE_MAPPING=$5
 
-NLAYER=$5
+NLAYER=3
 OPTIMIZER='Adam'
 LR=0.001
 REDUCE='self-attention' # mean, max, or last_hidden
@@ -71,5 +72,6 @@ do
                     --dim_input=$DIM_INPUT \
                     --encoder=$ENCODER \
                     --dim_att=$DIM_ATT \
-                    --alpha=$ALPHA
+                    --alpha=$ALPHA \
+                    --dim_enc=$DIM_ENC
 done
