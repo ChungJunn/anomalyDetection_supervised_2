@@ -42,6 +42,8 @@ N_NODES=5
 
 export CUDA_VISIBLE_DEVICES=$1
 
+for i in 1 2 
+do
 /usr/bin/python3.8 ad_dual_main.py  --data_dir=$DATA_DIR \
                     --data_dir2=$DATA_DIR2 \
                     --csv1=$CSV1 \
@@ -70,3 +72,4 @@ export CUDA_VISIBLE_DEVICES=$1
                     --encoder=$ENCODER \
                     --dim_att=$DIM_ATT \
                     --alpha=$ALPHA
+done

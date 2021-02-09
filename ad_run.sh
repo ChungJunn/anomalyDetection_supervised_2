@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='21.02.08.exp1'
+EXP_NAME='21.02.09.exp1'
 TUNE=0
 
 # Model
@@ -12,9 +12,9 @@ DIM_LSTM_HIDDEN=$5
 DIM_ATT=$DIM_LSTM_HIDDEN
 
 USE_FEATURE_MAPPING=1
-DIM_FEATURE_MAPPING=24
+DIM_FEATURE_MAPPING=$6
 
-NLAYER=$6
+NLAYER=3
 OPTIMIZER='Adam'
 LR=0.001
 REDUCE='self-attention' # mean, max, or self-attention
@@ -50,7 +50,7 @@ else
 fi
 
 export CUDA_VISIBLE_DEVICES=$1
-for i in 1 2 3 4 5
+for i in 1 2 3
 do
     /usr/bin/python3.8 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
