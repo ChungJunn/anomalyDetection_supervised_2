@@ -1,21 +1,22 @@
 #!/bin/bash
-EXP_NAME='21.02.08.exp4'
+EXP_NAME='21.02.09.exp5'
 
 # Weight for combined_loss
 ALPHA=0.5
 
 # Model
-ENCODER=$2 # rnn, transformer, none
-BIDIRECTIONAL=$3
+ENCODER='dnn' # rnn, transformer, none
+BIDIRECTIONAL=-1
 
 BATCH_SIZE=64
-DIM_LSTM_HIDDEN=$4
+DIM_ENC=24
+DIM_LSTM_HIDDEN=-1
 DIM_ATT=$DIM_LSTM_HIDDEN
 
 USE_FEATURE_MAPPING=1
 DIM_FEATURE_MAPPING=24
 
-NLAYER=$5
+NLAYER=-1
 OPTIMIZER='Adam'
 LR=0.001
 REDUCE='self-attention' # mean, max, or last_hidden
@@ -42,7 +43,9 @@ N_NODES=5
 
 export CUDA_VISIBLE_DEVICES=$1
 
-/usr/bin/python3.8 ad_dual_main.py  --data_dir=$DATA_DIR \
+for i in 1 2 3 4 5
+do
+python3 ad_dual_main.py  --data_dir=$DATA_DIR \
                     --data_dir2=$DATA_DIR2 \
                     --csv1=$CSV1 \
                     --csv2=$CSV2 \
@@ -69,4 +72,6 @@ export CUDA_VISIBLE_DEVICES=$1
                     --dim_input=$DIM_INPUT \
                     --encoder=$ENCODER \
                     --dim_att=$DIM_ATT \
-                    --alpha=$ALPHA
+                    --alpha=$ALPHA \
+                    --dim_enc=$DIM_ENC
+done
