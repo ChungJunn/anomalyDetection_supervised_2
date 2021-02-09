@@ -50,6 +50,7 @@ class DNN_classifier(nn.Module):
         x = self.fc4(x)
         return F.log_softmax(x, dim=1)
 
+
 class AD_SUP2_MODEL1(nn.Module):
     def __init__(self, dim_input, reduce):
         super(AD_SUP2_MODEL1, self).__init__()
@@ -111,6 +112,21 @@ class AD_SUP2_MODEL3(nn.Module):
         logits = self.classifier(x)
 
         return logits
+
+class DNN_encoder(nn.Module):
+    def __init__(self, dim_input, dim_enc):
+        super(DNN_encoder, self).__init__()
+        self.fc1 = nn.Linear(dim_input, 600)
+        self.fc2 = nn.Linear(600, 600)
+        self.fc3 = nn.Linear(600, 600)
+        self.fc4 = nn.Linear(600, dim_enc)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.relu(self.fc3(x))
+        return self.fc4(x)
 
 class RNN_encoder(nn.Module):
     def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer, dim_att):
@@ -261,7 +277,28 @@ class AD_SUP2_MODEL2(nn.Module):
 
         return logits
 
-class AD_SUP2_MODEL4(nn.Module):
+class AD_SUP2_MODEL5(nn.Module): # DNN-enc + Max-pooling
+    def __init__(self, dim_input, dim_enc):
+        super(AD_SUP2_MODEL5, self).__init__()
+
+        self.encoder=DNN_encoder(dim_input, dim_enc)
+
+        self.pooling_layer = pooling_layer(reduce='max')
+
+        self.classifier=DNN_classifier(dim_input=dim_enc)
+
+    def forward(self, x):
+        x = torch.transpose(x, 0, 1)
+        x = self.encoder(x)
+
+        out = self.pooling_layer(x)
+        enc_out = out.squeeze()
+
+        logits = self.classifier(enc_out)
+
+        return logits
+
+class AD_SUP2_MODEL4(nn.Module): # RNN classifier
     #def __init__(self, dim_input, dim_lstm_hidden, dim_fc_hidden, dim_output):
     def __init__(self, dim_input, enc_dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer, clf_dim_lstm_hidden, clf_dim_fc_hidden, clf_dim_output):
         super(AD_SUP2_MODEL4, self).__init__()
