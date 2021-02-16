@@ -212,7 +212,7 @@ if __name__ == '__main__':
 
     params = vars(args)
 
-    neptune.init('cjlee/AnomalyDetection-GNN')
+    neptune.init('cjlee/secon2021')
     experiment = neptune.create_experiment(name=args.exp_name, params=params)
     args.out_file = experiment.id + '.pth'
 

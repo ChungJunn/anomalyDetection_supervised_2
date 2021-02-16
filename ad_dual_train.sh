@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='21.02.09.exp4'
+EXP_NAME='21.02.16.exp9'
 
 # Weight for combined_loss
 ALPHA=0.5
@@ -14,9 +14,9 @@ DIM_LSTM_HIDDEN=$4
 DIM_ATT=$DIM_LSTM_HIDDEN
 
 USE_FEATURE_MAPPING=1
-DIM_FEATURE_MAPPING=$5
+DIM_FEATURE_MAPPING=24
 
-NLAYER=3
+NLAYER=2
 OPTIMIZER='Adam'
 LR=0.001
 REDUCE='self-attention' # mean, max, or last_hidden
