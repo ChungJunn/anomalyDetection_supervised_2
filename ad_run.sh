@@ -1,14 +1,14 @@
 #!/bin/bash
-EXP_NAME='21.02.20.debug'
+EXP_NAME=$2
 TUNE=0
 
 # Model
-ENCODER='rnn' # rnn, transformer, none, dnn
-BIDIRECTIONAL=0
+ENCODER=$3 # rnn, transformer, none, dnn
+BIDIRECTIONAL=$4
 
-DATASET='cnsm_exp2_1' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DATASET=$5 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 BATCH_SIZE=64
-DIM_LSTM_HIDDEN=40
+DIM_LSTM_HIDDEN=$6
 DIM_ATT=$DIM_LSTM_HIDDEN
 
 USE_FEATURE_MAPPING=1
@@ -17,7 +17,7 @@ DIM_FEATURE_MAPPING=24
 NLAYER=2
 OPTIMIZER='Adam'
 LR=0.001
-REDUCE='self-attention' # mean, max, or self-attention
+REDUCE=$7 # mean, max, or self-attention
 NHEAD=4
 DIM_FEEDFORWARD=48
 
