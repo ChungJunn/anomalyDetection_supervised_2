@@ -132,19 +132,53 @@ class AD_SUP2_MODEL3(nn.Module):
         return logits
 
 class DNN_encoder(nn.Module):
-    def __init__(self, dim_input, dim_enc):
+    def __init__(self, dim_input, dim_enc, reduce):
         super(DNN_encoder, self).__init__()
-        self.fc1 = nn.Linear(dim_input, 600)
-        self.fc2 = nn.Linear(600, 600)
-        self.fc3 = nn.Linear(600, 600)
-        self.fc4 = nn.Linear(600, dim_enc)
+        # encoder
+        self.fc1 = nn.Linear(dim_input, 200)
+        self.fc2 = nn.Linear(200, 200)
+        self.fc3 = nn.Linear(200, dim_enc)
         self.relu = nn.ReLU()
 
+        # readout
+        self.reduce = reduce
+
+        if self.reduce == "self-attention":
+            dim_att_in = dim_enc
+            self.dim_att = dim_enc
+
+            self.att1 = nn.Linear(dim_att_in, self.dim_att)
+            self.att2 = nn.Linear(self.dim_att, 1)
+        elif self.reduce == 'max' or self.reduce == 'mean':
+            self.pooling_layer=pooling_layer(reduce=reduce)
+        else:
+            print("reduce must be either max, mean, or self-attention")
+            import sys; sys.exit(-1)
+
     def forward(self, x):
+        # reverse the order
+        x = torch.transpose(x, 0, 1).contiguous()
+        Tx, Bn, D = x.size()
+
+        # DNN encoder
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
-        x = self.relu(self.fc3(x))
-        return self.fc4(x)
+        ctx = self.fc3(x)
+
+        if self.reduce == "self-attention":
+            att1 = torch.tanh(self.att1(ctx))
+            att2 = self.att2(att1).view(Tx, Bn)
+
+            alpha = att2 - torch.max(att2)
+            alpha = torch.exp(alpha)
+
+            alpha = alpha / (torch.sum(alpha, dim=0, keepdim=True) + 1e-15)
+            enc_out = torch.sum(alpha.unsqueeze(2) * ctx, dim=0)
+        else:
+            out = self.pooling_layer(ctx)
+            enc_out = out.squeeze(0) # squeeze node-dimension
+
+        return enc_out
 
 class RNN_encoder(nn.Module):
     def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer, dim_att):
@@ -299,16 +333,16 @@ class AD_SUP2_MODEL2(nn.Module):
         return logits
 
 class AD_SUP2_MODEL5(nn.Module): # DNN-enc + Max-pooling
-    def __init__(self, dim_input, dim_enc):
+    def __init__(self, dim_input, dim_enc, reduce):
         super(AD_SUP2_MODEL5, self).__init__()
 
-        self.encoder=DNN_encoder(dim_input, dim_enc)
-
-        self.pooling_layer = pooling_layer(reduce='max')
-
+        self.encoder=DNN_encoder(dim_input, dim_enc, reduce)
         self.classifier=DNN_classifier(dim_input=dim_enc)
 
     def forward(self, x):
+        x = self.encoder(x)
+        logits = self.classifier(x)
+        '''
         x = torch.transpose(x, 0, 1)
         x = self.encoder(x)
 
@@ -316,7 +350,7 @@ class AD_SUP2_MODEL5(nn.Module): # DNN-enc + Max-pooling
         enc_out = out.squeeze()
 
         logits = self.classifier(enc_out)
-
+        '''
         return logits
 
 class AD_SUP2_MODEL4(nn.Module): # RNN classifier

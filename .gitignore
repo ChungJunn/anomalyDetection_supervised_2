@@ -18,3 +18,5 @@ script/*
 none_result/*
 test.py
 ray_result_bkup/*
+temp*
+*.swo
