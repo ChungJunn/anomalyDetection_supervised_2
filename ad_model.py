@@ -58,11 +58,29 @@ class AD_SUP2_MODEL1(nn.Module):
         self.classifier = DNN_classifier(dim_input=dim_input)
         self.reduce = reduce # either 'mean' or 'max'
 
+        # attention paramters
+        if self.reduce == 'self-attention':
+            dim_att_in = dim_input
+            self.dim_att = dim_input
+            self.att1 = nn.Linear(dim_att_in, self.dim_att)
+            self.att2 = nn.Linear(self.dim_att, 1)
+
     def encoder(self, annotation):
         if self.reduce == 'max':
             enc_out, _ = torch.max(annotation, dim=0, keepdim=True)
         elif self.reduce == 'mean':
             enc_out = torch.mean(annotation, dim=0, keepdim=True)
+        elif self.reduce == 'self-attention':
+            ctx = annotation
+            Tx, Bn, D = ctx.size()
+            att1 = torch.tanh(self.att1(ctx))
+            att2 = self.att2(att1).view(Tx, Bn)
+
+            alpha = att2 - torch.max(att2)
+            alpha = torch.exp(alpha)
+
+            alpha = alpha / (torch.sum(alpha, dim=0, keepdim=True) + 1e-15)
+            enc_out = torch.sum(alpha.unsqueeze(2) * ctx, dim=0)
         else:
             print('reduce must be either \'max\' or \'mean\'')
             import sys; sys.exit(-1)
@@ -70,7 +88,7 @@ class AD_SUP2_MODEL1(nn.Module):
         return enc_out
 
     def forward(self, annotation):
-        annotation=torch.transpose(annotation,0,1)
+        annotation=torch.transpose(annotation,0,1).contiguous()
 
         encoded = self.encoder(annotation)
         encoded=encoded.squeeze(0)
