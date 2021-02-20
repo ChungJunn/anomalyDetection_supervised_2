@@ -169,13 +169,16 @@ class RNN_encoder(nn.Module):
 
     def forward(self, x):
         # reverse the order
-        x = torch.transpose(x, 0, 1)
+        x = torch.transpose(x, 0, 1).contiguous()
         Tx, Bn, D = x.size()
 
+        '''
+        import pdb; pdb.set_trace()
         # create inverted indices
         idx = [i for i in range(x.size(0)-1, -1, -1)]
         idx = torch.LongTensor(idx).to(x.get_device())
         x = x.index_select(0, idx)
+        '''
 
         # RNN layer
         if self.use_feature_mapping == 1:
