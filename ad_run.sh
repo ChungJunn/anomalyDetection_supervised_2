@@ -53,8 +53,8 @@ else
 fi
 
 export CUDA_VISIBLE_DEVICES=$1
-#for i in 1 2 3
-#do
+for i in 1 2 3 4 5
+do
     /usr/bin/python3.8 ad_main.py  --data_dir=$DATA_DIR \
                         --csv1=$CSV1 \
                         --csv2=$CSV2 \
@@ -83,4 +83,4 @@ export CUDA_VISIBLE_DEVICES=$1
                         --dim_att=$DIM_ATT \
                         --tune=$TUNE \
                         --dim_enc=$DIM_ENC
-#done
+done
