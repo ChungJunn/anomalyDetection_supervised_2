@@ -59,7 +59,7 @@ def train_main(args, neptune):
     elif args.encoder=='dnn':
         model = AD_SUP2_MODEL5(dim_input=args.dim_input, dim_enc=args.dim_enc, reduce=args.reduce).to(device)
     else:
-        print("model must be either \'none\', \'rnn\', \'transformer\'")
+        print("model must be either \'none\',\'dnn\', \'rnn\', \'transformer\'")
         sys.exit(0)
 
     print('# model', model)
