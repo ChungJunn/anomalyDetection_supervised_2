@@ -50,17 +50,31 @@ def remove_column(data, header):
 HOME = os.environ['HOME']
 data_name = 'cnsm_exp1_data'
 data_file = data_name + '.csv'
+dir = '21.03.10-gnn_data'
+
 data_path = HOME + '/' + 'autoregressor/data/raw/' + data_file
-save_dir = HOME + '/' + 'autoregressor/data/' + data_name + '/'
-rnn_len = 8
+save_dir = HOME + '/' + 'autoregressor/data/' + data_name + '/' + dir + '/'
+rnn_len = 16
 stride = 1
 
 print(data_path)
 df_data = pd.read_csv(data_path)
-
 df_data = df_data.drop(columns=['Total_Label','rcl_label'])
+
 label_col = 'SLA_Label'
 header = df_data.columns
+
+label = (np.array(df_data)[:,-1]).reshape(-1,1).astype(np.int32)
+data = np.array(df_data)[:,:-1]
+avgs = np.mean(data, axis=0).reshape(1,-1)
+stds = (np.std(data, axis=0) + 0.001).reshape(1,-1)
+
+data -= avgs
+data /= stds
+
+data = np.hstack((data, label))
+
+df_data = pd.DataFrame(data, columns=header)
 
 # split into nodes
 label_data = df_data.iloc[:, -1]
@@ -113,59 +127,70 @@ ans_val_idx = int(n_ans * tr_ratio)
 ns_test_idx = int(n_ns * (tr_ratio + val_ratio))
 ans_test_idx = int(n_ans * (tr_ratio + val_ratio))
 
-fw_tr = np.vstack((fw_ns[:ns_val_idx,:,:], fw_ans[:ns_val_idx,:,:]))
-fw_val = np.vstack((fw_ns[ns_val_idx:ns_test_idx,:,:], fw_ans[ns_val_idx:ns_test_idx,:,:]))
-fw_test = np.vstack((fw_ns[ns_test_idx:,:,:], fw_ans[ns_test_idx:,:,:]))
+fw_tr = np.vstack((fw_ns[:ns_val_idx,:,:-1], fw_ans[:ns_val_idx,:,:-1]))
+fw_val = np.vstack((fw_ns[ns_val_idx:ns_test_idx,:,:-1], fw_ans[ns_val_idx:ns_test_idx,:,:-1]))
+fw_test = np.vstack((fw_ns[ns_test_idx:,:,:-1], fw_ans[ns_test_idx:,:,:-1]))
 
-ids_tr = np.vstack((ids_ns[:ns_val_idx,:,:], ids_ans[:ns_val_idx,:,:]))
-ids_val = np.vstack((ids_ns[ns_val_idx:ns_test_idx,:,:], ids_ans[ns_val_idx:ns_test_idx,:,:]))
-ids_test = np.vstack((ids_ns[ns_test_idx:,:,:], ids_ans[ns_test_idx:,:,:]))
+ids_tr = np.vstack((ids_ns[:ns_val_idx,:,:-1], ids_ans[:ns_val_idx,:,:-1]))
+ids_val = np.vstack((ids_ns[ns_val_idx:ns_test_idx,:,:-1], ids_ans[ns_val_idx:ns_test_idx,:,:-1]))
+ids_test = np.vstack((ids_ns[ns_test_idx:,:,:-1], ids_ans[ns_test_idx:,:,:-1]))
 
-flowmon_tr = np.vstack((flowmon_ns[:ns_val_idx,:,:], flowmon_ans[:ns_val_idx,:,:]))
-flowmon_val = np.vstack((flowmon_ns[ns_val_idx:ns_test_idx,:,:], flowmon_ans[ns_val_idx:ns_test_idx,:,:]))
-flowmon_test = np.vstack((flowmon_ns[ns_test_idx:,:,:], flowmon_ans[ns_test_idx:,:,:]))
+flowmon_tr = np.vstack((flowmon_ns[:ns_val_idx,:,:-1], flowmon_ans[:ns_val_idx,:,:-1]))
+flowmon_val = np.vstack((flowmon_ns[ns_val_idx:ns_test_idx,:,:-1], flowmon_ans[ns_val_idx:ns_test_idx,:,:-1]))
+flowmon_test = np.vstack((flowmon_ns[ns_test_idx:,:,:-1], flowmon_ans[ns_test_idx:,:,:-1]))
 
-dpi_tr = np.vstack((dpi_ns[:ns_val_idx,:,:], dpi_ans[:ns_val_idx,:,:]))
-dpi_val = np.vstack((dpi_ns[ns_val_idx:ns_test_idx,:,:], dpi_ans[ns_val_idx:ns_test_idx,:,:]))
-dpi_test = np.vstack((dpi_ns[ns_test_idx:,:,:], dpi_ans[ns_test_idx:,:,:]))
+dpi_tr = np.vstack((dpi_ns[:ns_val_idx,:,:-1], dpi_ans[:ns_val_idx,:,:-1]))
+dpi_val = np.vstack((dpi_ns[ns_val_idx:ns_test_idx,:,:-1], dpi_ans[ns_val_idx:ns_test_idx,:,:-1]))
+dpi_test = np.vstack((dpi_ns[ns_test_idx:,:,:-1], dpi_ans[ns_test_idx:,:,:-1]))
 
-lb_tr = np.vstack((lb_ns[:ns_val_idx,:,:], lb_ans[:ns_val_idx,:,:]))
-lb_val = np.vstack((lb_ns[ns_val_idx:ns_test_idx,:,:], lb_ans[ns_val_idx:ns_test_idx,:,:]))
-lb_test = np.vstack((lb_ns[ns_test_idx:,:,:], lb_ans[ns_test_idx:,:,:]))
+lb_tr = np.vstack((lb_ns[:ns_val_idx,:,:-1], lb_ans[:ns_val_idx,:,:-1]))
+lb_val = np.vstack((lb_ns[ns_val_idx:ns_test_idx,:,:-1], lb_ans[ns_val_idx:ns_test_idx,:,:-1]))
+lb_test = np.vstack((lb_ns[ns_test_idx:,:,:-1], lb_ans[ns_test_idx:,:,:-1]))
+
+label_tr = np.vstack((lb_ns[:ns_val_idx,-1,-1:], lb_ans[:ns_val_idx,-1,-1:]))
+label_val = np.vstack((lb_ns[ns_val_idx:ns_test_idx,-1,-1:], lb_ans[ns_val_idx:ns_test_idx,-1,-1:]))
+label_test = np.vstack((lb_ns[ns_test_idx:,-1,-1:], lb_ans[ns_test_idx:,-1,-1:]))
 
 # save into pkl files
 #fw_tr.rnn_len00.stride00.pkl
-with open(save_dir + 'fw_tr.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_train.rnn_len' + str(rnn_len) +  '.fw.pkl', 'wb') as fp:
     pkl.dump(fw_tr, fp)
-with open(save_dir + 'fw_val.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_val.rnn_len' + str(rnn_len) + '.fw.pkl', 'wb') as fp:
     pkl.dump(fw_val, fp)
-with open(save_dir + 'fw_test.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_test.rnn_len' + str(rnn_len) + '.fw.pkl', 'wb') as fp:
     pkl.dump(fw_test, fp)
 
-with open(save_dir + 'ids_tr.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_train.rnn_len' + str(rnn_len) + '.ids.pkl', 'wb') as fp:
     pkl.dump(ids_tr, fp)
-with open(save_dir + 'ids_val.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_val.rnn_len' + str(rnn_len) + '.ids.pkl', 'wb') as fp:
     pkl.dump(ids_val, fp)
-with open(save_dir + 'ids_test.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_test.rnn_len' + str(rnn_len) + '.ids.pkl', 'wb') as fp:
     pkl.dump(ids_test, fp)
 
-with open(save_dir + 'flowmon_tr.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_train.rnn_len' + str(rnn_len) + '.flowmon.pkl', 'wb') as fp:
     pkl.dump(flowmon_tr, fp)
-with open(save_dir + 'flowmon_val.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_val.rnn_len' + str(rnn_len) + '.flowmon.pkl', 'wb') as fp:
     pkl.dump(flowmon_val, fp)
-with open(save_dir + 'flowmon_test.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_test.rnn_len' + str(rnn_len) + '.flowmon.pkl', 'wb') as fp:
     pkl.dump(flowmon_test, fp)
 
-with open(save_dir + 'dpi_tr.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_train.rnn_len' + str(rnn_len) + '.dpi.pkl', 'wb') as fp:
     pkl.dump(dpi_tr, fp)
-with open(save_dir + 'dpi_val.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_val_rnn_len' + str(rnn_len) + '.dpi.pkl', 'wb') as fp:
     pkl.dump(dpi_val, fp)
-with open(save_dir + 'dpi_test.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_test.rnn_len' + str(rnn_len) + '.dpi.pkl', 'wb') as fp:
     pkl.dump(dpi_test, fp)
 
-with open(save_dir + 'lb_tr.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_train.rnn_len' + str(rnn_len) + '.lb.pkl', 'wb') as fp:
     pkl.dump(lb_tr, fp)
-with open(save_dir + 'lb_val.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_val.rnn_len' + str(rnn_len) + '.lb.pkl', 'wb') as fp:
     pkl.dump(lb_val, fp)
-with open(save_dir + 'lb_test.rnn_len' + str(rnn_len) + '.stride' + str(stride) + '.pkl', 'wb') as fp:
+with open(save_dir + 'sup_test.rnn_len' + str(rnn_len) + '.lb.pkl', 'wb') as fp:
     pkl.dump(lb_test, fp)
+
+with open(save_dir + 'sup_train.rnn_len' + str(rnn_len) + '.label.pkl', 'wb') as fp:
+    pkl.dump(label_tr, fp)
+with open(save_dir + 'sup_val.rnn_len' + str(rnn_len) + '.label.pkl', 'wb') as fp:
+    pkl.dump(label_val, fp)
+with open(save_dir + 'sup_test.rnn_len' + str(rnn_len) + '.label.pkl', 'wb') as fp:
+    pkl.dump(label_test, fp)

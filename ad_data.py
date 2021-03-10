@@ -2,6 +2,29 @@ import pandas as pd
 import numpy as np
 import torch
 
+class AD_SUP2_RNN_ITERATOR:
+    def __init__(self, tvt, data_dir, pkl_files, batch_size):
+        ## replace with add tvt to the dataset paths
+        pkl_paths=[]
+
+        for n in range(len(pkl_files)):
+            pkl_path=data_dir+tvt+'.'+pkl_files
+            pkl_paths.append(pkl_path)
+
+        # iteration for n_nodes
+        self.node_features=[]
+        for n in range(len(pkl_paths)-1):
+            with open(pkl_path[n], 'rb') as fp:
+                node_data = pkl.load(fp)
+                self.node_features.append(node_data)
+        self.label = np.array(pd.read_csv(csv_paths[-1]))
+
+    def make_annotation_matrix(self, idx):
+
+    def reset(self):
+
+    def __next__(self):
+
 # create annotation and adjacency matrices and dataloader
 class AD_SUP2_ITERATOR:
     def __init__(self, tvt, data_dir, csv_files, batch_size):
