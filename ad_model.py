@@ -224,14 +224,6 @@ class RNN_encoder(nn.Module):
         x = torch.transpose(x, 0, 1).contiguous()
         Tx, Bn, D = x.size()
 
-        '''
-        import pdb; pdb.set_trace()
-        # create inverted indices
-        idx = [i for i in range(x.size(0)-1, -1, -1)]
-        idx = torch.LongTensor(idx).to(x.get_device())
-        x = x.index_select(0, idx)
-        '''
-
         # RNN layer
         if self.use_feature_mapping == 1:
             x = x.view(Tx*Bn,D)
@@ -240,7 +232,6 @@ class RNN_encoder(nn.Module):
 
         ctx, hidden = self.lstm_layer(x, None)
 
-        # TODO : assume uni-directional rnn
         if self.reduce == "self-attention":
             att1 = torch.tanh(self.att1(ctx))
             att2 = self.att2(att1).view(Tx, Bn)
@@ -342,27 +333,18 @@ class AD_SUP2_MODEL5(nn.Module): # DNN-enc + Max-pooling
     def forward(self, x):
         x = self.encoder(x)
         logits = self.classifier(x)
-        '''
-        x = torch.transpose(x, 0, 1)
-        x = self.encoder(x)
 
-        out = self.pooling_layer(x)
-        enc_out = out.squeeze()
-
-        logits = self.classifier(enc_out)
-        '''
         return logits
 
 class AD_SUP2_MODEL4(nn.Module): # RNN classifier
-    #def __init__(self, dim_input, dim_lstm_hidden, dim_fc_hidden, dim_output):
-    def __init__(self, dim_input, enc_dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer, clf_dim_lstm_hidden, clf_dim_fc_hidden, clf_dim_output):
+    def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer, dim_att, clf_dim_lstm_hidden, clf_dim_fc_hidden, clf_dim_output):
         super(AD_SUP2_MODEL4, self).__init__()
         if bidirectional==1:
-            dim_classifier_input=enc_dim_lstm_hidden*2
+            dim_classifier_input=dim_lstm_hidden*2
         else:
-            dim_classifier_input=enc_dim_lstm_hidden
+            dim_classifier_input=dim_lstm_hidden
 
-        self.encoder=RNN_encoder(dim_input, enc_dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer)
+        self.encoder=RNN_encoder(dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer, dim_att)
 
         # classifier
         self.classifier=RNN_classifier(dim_input=dim_classifier_input, dim_lstm_hidden=clf_dim_lstm_hidden, dim_fc_hidden=clf_dim_fc_hidden, dim_output=clf_dim_output)
@@ -370,8 +352,10 @@ class AD_SUP2_MODEL4(nn.Module): # RNN classifier
     def forward(self, x, clf_hidden):
         # through encoder
         x = self.encoder(x)
-        x = x.unsqueeze(0)
+        x = x.unsqueeze(1)
+
         logits, clf_hidden = self.classifier(x, clf_hidden)
+        logits = logits[-1,:,:]
 
         return logits, clf_hidden
 

@@ -20,6 +20,7 @@ import neptune
 from ad_model import AD_SUP2_MODEL1
 from ad_model import AD_SUP2_MODEL2
 from ad_model import AD_SUP2_MODEL3
+from ad_model import AD_SUP2_MODEL4
 from ad_model import AD_SUP2_MODEL5
 from ad_data import AD_SUP2_ITERATOR, AD_SUP2_RNN_ITERATOR
 from ad_eval import eval_main
@@ -50,6 +51,7 @@ def train_main(args, neptune):
     criterion = F.nll_loss
 
     # declare model
+    '''
     if args.encoder=='none':
         model = AD_SUP2_MODEL1(reduce=args.reduce, dim_input=args.dim_input).to(device)
     elif args.encoder=='rnn' or args.encoder=='bidirectionalrnn':
@@ -61,6 +63,9 @@ def train_main(args, neptune):
     else:
         print("model must be either \'none\',\'dnn\', \'rnn\', \'transformer\'")
         sys.exit(0)
+    '''
+
+    model = AD_SUP2_MODEL4(dim_input=args.dim_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer, dim_att=args.dim_att, clf_dim_lstm_hidden=args.clf_dim_lstm_hidden, clf_dim_fc_hidden=args.clf_dim_fc_hidden, clf_dim_output=args.clf_dim_output).to(device)
 
     print('# model', model)
 
@@ -82,12 +87,13 @@ def train_main(args, neptune):
     # modify the dataset to produce labels
     # create a training loop
     train_loss = 0.0
-    log_interval=1000
+    log_interval=100
     bc = 0
     best_val_f1 = None
     if args.tune == 0:
         savedir = './result/' + args.out_file
     n_samples = trainiter.n_samples
+    clf_hidden = None
 
     for ei in range(args.max_epoch):
         for li, (anno, label, end_of_data) in enumerate(trainiter):
@@ -96,7 +102,8 @@ def train_main(args, neptune):
 
             optimizer.zero_grad()
 
-            output = model(anno)
+            output, clf_hidden = model(anno, clf_hidden)
+            clf_hidden = [clf_hidden[0].detach(), clf_hidden[1].detach()]
 
             # go through loss function
             loss = criterion(output, label)
@@ -108,13 +115,16 @@ def train_main(args, neptune):
 
             if end_of_data == 1: break
 
+            if (li % log_interval) == (log_interval - 1):
+                print('{:d} | {:d} | {:.4f}'.format(ei+1, li+1, train_loss))
+                train_loss = 0.0
+
         train_loss = train_loss / li
         print('epoch: {:d} | train_loss: {:.4f}'.format(ei+1, train_loss))
         if neptune is not None: neptune.log_metric('train loss', ei, train_loss)
         train_loss = 0.0
 
         # evaluation code
-        # valid_loss = validate(model, valiter, device, criterion)
         acc,prec,rec,f1=eval_main(model,valiter,device,neptune=None)
         print('epoch: {:d} | valid_f1: {:.4f}'.format(ei+1, f1))
         if neptune is not None: neptune.log_metric('valid f1', ei, f1)
@@ -126,9 +136,6 @@ def train_main(args, neptune):
                 test_acc,test_prec,test_rec,test_f1=eval_main(model,testiter,device,neptune=None)
                 tune.report(train_loss=train_loss, val_f1=f1, test_f1=test_f1)
 
-        # if tune, do not save model files
-
-        # need to implement early-stop
         if ei == 0 or f1 > best_val_f1:
             if args.tune == 0:
                 torch.save(model, savedir)
@@ -194,6 +201,10 @@ if __name__ == '__main__':
     parser.add_argument('--dim_feedforward', type=int)
     # DNN-enc params
     parser.add_argument('--dim_enc', type=int)
+    # clf params
+    parser.add_argument('--clf_dim_lstm_hidden', type=int)
+    parser.add_argument('--clf_dim_fc_hidden', type=int)
+    parser.add_argument('--clf_dim_output', type=int)
 
     args = parser.parse_args()
 

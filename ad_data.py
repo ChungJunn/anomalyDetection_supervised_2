@@ -46,7 +46,11 @@ class AD_SUP2_RNN_ITERATOR:
         self.idx+=1
 
         if self.idx >= (self.n_samples-1):
-            end_of_data=0
+            end_of_data = 1
+            self.reset()
+
+        x_data = torch.tensor(x_data).type(torch.float32)
+        y_data = torch.tensor(y_data).type(torch.int64)
 
         return x_data, y_data, end_of_data
 
