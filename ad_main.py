@@ -21,7 +21,7 @@ from ad_model import AD_SUP2_MODEL1
 from ad_model import AD_SUP2_MODEL2
 from ad_model import AD_SUP2_MODEL3
 from ad_model import AD_SUP2_MODEL5
-from ad_data import AD_SUP2_ITERATOR
+from ad_data import AD_SUP2_ITERATOR, AD_SUP2_RNN_ITERATOR
 from ad_eval import eval_main
 
 from ray import tune
@@ -64,16 +64,16 @@ def train_main(args, neptune):
 
     print('# model', model)
 
-    csv_files=[]
+    pkl_files=[]
     for n in range(1, args.n_nodes+1):
-        csv_file = eval('args.csv' + str(n))
-        csv_files.append(csv_file)
-    csv_files.append(args.csv_label) # append label 
+        pkl_file = eval('args.pkl_file' + str(n))
+        pkl_files.append(pkl_file)
+    pkl_files.append(args.pkl_label) # append label 
 
     # declare dataset
-    trainiter = AD_SUP2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files, batch_size=args.batch_size)
-    valiter = AD_SUP2_ITERATOR(tvt='sup_val', data_dir=args.data_dir, csv_files=csv_files, batch_size=args.batch_size)
-    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files, batch_size=args.batch_size)
+    trainiter = AD_SUP2_RNN_ITERATOR(tvt='sup_train', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
+    valiter = AD_SUP2_RNN_ITERATOR(tvt='sup_val', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
+    testiter = AD_SUP2_RNN_ITERATOR(tvt='sup_test', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
 
     # declare optimizer
     estring = "optim." + args.optimizer
@@ -163,12 +163,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str)
     parser.add_argument('--data_dir', type=str)
-    parser.add_argument('--csv1', type=str)
-    parser.add_argument('--csv2', type=str)
-    parser.add_argument('--csv3', type=str)
-    parser.add_argument('--csv4', type=str)
-    parser.add_argument('--csv5', type=str)
-    parser.add_argument('--csv_label', type=str)
+    parser.add_argument('--pkl_file1', type=str)
+    parser.add_argument('--pkl_file2', type=str)
+    parser.add_argument('--pkl_file3', type=str)
+    parser.add_argument('--pkl_file4', type=str)
+    parser.add_argument('--pkl_file5', type=str)
+    parser.add_argument('--pkl_label', type=str)
     parser.add_argument('--n_nodes', type=int)
     parser.add_argument('--reduce', type=str)
     parser.add_argument('--optimizer', type=str)
@@ -199,9 +199,13 @@ if __name__ == '__main__':
 
     params = vars(args)
 
+    '''
     neptune.init('cjlee/secon2021')
     experiment = neptune.create_experiment(name=args.exp_name, params=params)
     args.out_file = experiment.id + '.pth'
+    '''
+    neptune=None
+    args.out_file = 'dummy.pth'
 
     print('parameters:')
     print('='*90)

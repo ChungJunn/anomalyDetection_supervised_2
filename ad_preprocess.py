@@ -176,7 +176,7 @@ with open(save_dir + 'sup_test.rnn_len' + str(rnn_len) + '.flowmon.pkl', 'wb') a
 
 with open(save_dir + 'sup_train.rnn_len' + str(rnn_len) + '.dpi.pkl', 'wb') as fp:
     pkl.dump(dpi_tr, fp)
-with open(save_dir + 'sup_val_rnn_len' + str(rnn_len) + '.dpi.pkl', 'wb') as fp:
+with open(save_dir + 'sup_val.rnn_len' + str(rnn_len) + '.dpi.pkl', 'wb') as fp:
     pkl.dump(dpi_val, fp)
 with open(save_dir + 'sup_test.rnn_len' + str(rnn_len) + '.dpi.pkl', 'wb') as fp:
     pkl.dump(dpi_test, fp)

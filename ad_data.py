@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import pickle as pkl
 import torch
 
 class AD_SUP2_RNN_ITERATOR:
@@ -8,22 +9,46 @@ class AD_SUP2_RNN_ITERATOR:
         pkl_paths=[]
 
         for n in range(len(pkl_files)):
-            pkl_path=data_dir+tvt+'.'+pkl_files
+            pkl_path=data_dir+tvt+'.'+pkl_files[n]
             pkl_paths.append(pkl_path)
 
-        # iteration for n_nodes
+        # iter for n_nodes
         self.node_features=[]
         for n in range(len(pkl_paths)-1):
-            with open(pkl_path[n], 'rb') as fp:
+            with open(pkl_paths[n], 'rb') as fp:
                 node_data = pkl.load(fp)
                 self.node_features.append(node_data)
-        self.label = np.array(pd.read_csv(csv_paths[-1]))
+        with open(pkl_paths[-1], 'rb') as fp:
+            self.label= pkl.load(fp)
 
-    def make_annotation_matrix(self, idx):
+        self.input = np.stack(self.node_features)
+        self.input = self.input.transpose(1,2,0,3)
+
+        self.idx = 0
+        self.n_samples = self.input.shape[0]
+        self.n_node_features = self.input.shape[-1]
+        self.n_nodes = len(pkl_paths) - 1
 
     def reset(self):
+        self.idx=0
+        return
+
+    def __iter__(self):
+        return self
 
     def __next__(self):
+        x_data = np.zeros((1, self.n_nodes, self.n_node_features))
+        y_data = np.zeros((1,))
+        end_of_data = 0
+
+        x_data = self.input[self.idx]
+        y_data = self.label[self.idx]
+        self.idx+=1
+
+        if self.idx >= (self.n_samples-1):
+            end_of_data=0
+
+        return x_data, y_data, end_of_data
 
 # create annotation and adjacency matrices and dataloader
 class AD_SUP2_ITERATOR:
