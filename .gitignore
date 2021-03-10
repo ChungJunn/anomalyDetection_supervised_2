@@ -20,3 +20,4 @@ test.py
 ray_result_bkup/*
 temp*
 *.swo
+libs/__pycache__/*
