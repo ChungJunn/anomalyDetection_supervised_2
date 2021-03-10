@@ -28,6 +28,7 @@ class AD_SUP2_RNN_ITERATOR:
         self.n_samples = self.input.shape[0]
         self.n_node_features = self.input.shape[-1]
         self.n_nodes = len(pkl_paths) - 1
+        self.rnn_len = self.input.shape[1]
 
     def reset(self):
         self.idx=0
@@ -37,12 +38,12 @@ class AD_SUP2_RNN_ITERATOR:
         return self
 
     def __next__(self):
-        x_data = np.zeros((1, self.n_nodes, self.n_node_features))
+        x_data = np.zeros((self.rnn_len, self.n_nodes, self.n_node_features))
         y_data = np.zeros((1,))
         end_of_data = 0
 
-        x_data = self.input[self.idx]
-        y_data = self.label[self.idx]
+        x_data[:,:,:] = self.input[self.idx]
+        y_data[:] = self.label[self.idx]
         self.idx+=1
 
         if self.idx >= (self.n_samples-1):

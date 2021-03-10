@@ -51,7 +51,6 @@ def train_main(args, neptune):
     criterion = F.nll_loss
 
     # declare model
-    '''
     if args.encoder=='none':
         model = AD_SUP2_MODEL1(reduce=args.reduce, dim_input=args.dim_input).to(device)
     elif args.encoder=='rnn' or args.encoder=='bidirectionalrnn':
@@ -60,12 +59,11 @@ def train_main(args, neptune):
         model = AD_SUP2_MODEL3(dim_input=args.dim_input, nhead=args.nhead, dim_feedforward=args.dim_feedforward, reduce=args.reduce, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer).to(device)
     elif args.encoder=='dnn':
         model = AD_SUP2_MODEL5(dim_input=args.dim_input, dim_enc=args.dim_enc, reduce=args.reduce).to(device)
+    elif args.encoder=='rnn-classifier':
+        model = AD_SUP2_MODEL4(dim_input=args.dim_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer, dim_att=args.dim_att, clf_dim_lstm_hidden=args.clf_dim_lstm_hidden, clf_dim_fc_hidden=args.clf_dim_fc_hidden, clf_dim_output=args.clf_dim_output).to(device)
     else:
         print("model must be either \'none\',\'dnn\', \'rnn\', \'transformer\'")
         sys.exit(0)
-    '''
-
-    model = AD_SUP2_MODEL4(dim_input=args.dim_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer, dim_att=args.dim_att, clf_dim_lstm_hidden=args.clf_dim_lstm_hidden, clf_dim_fc_hidden=args.clf_dim_fc_hidden, clf_dim_output=args.clf_dim_output).to(device)
 
     print('# model', model)
 

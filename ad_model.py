@@ -20,14 +20,12 @@ class RNN_classifier(nn.Module):
     def forward(self, input, hidden=None):
         output, hidden = self.rnn(input, hidden)
 
-        output = output.squeeze(0)
-
         output = self.fc1(output)
         output = self.relu(output)
 
         output = self.fc2(output)
 
-        return F.log_softmax(output, dim=1), hidden
+        return F.log_softmax(output, dim=2), hidden
 
     def init_hidden(self, Bn):
         hidden = torch.zeros(1, Bn, self.dim_hidden1)
