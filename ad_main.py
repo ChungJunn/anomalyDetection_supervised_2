@@ -84,8 +84,10 @@ def train_main(args, neptune):
 
     # modify the dataset to produce labels
     # create a training loop
-    train_loss = 0.0
-    log_interval=100
+    train_loss1 = 0.0
+    train_loss2 = 0.0
+    log_interval=1000
+    log_idx=0
     bc = 0
     best_val_f1 = None
     if args.tune == 0:
@@ -109,18 +111,21 @@ def train_main(args, neptune):
 
             # optimizer
             optimizer.step()
-            train_loss += loss.item()
+            train_loss1 += loss.item()
+            train_loss2 += loss.item()
 
             if end_of_data == 1: break
 
-            if (li % log_interval) == (log_interval - 1):
-                print('{:d} | {:d} | {:.4f}'.format(ei+1, li+1, train_loss))
-                train_loss = 0.0
+            if (log_idx % log_interval) == (log_interval - 1):
+                print('{:d} | {:d} | {:.4f}'.format(ei+1, log_idx+1, train_loss1))
+                if neptune is not None: neptune.log_metric('train loss (n_samples)', log_idx+1, train_loss1)
+                train_loss1 = 0.0
+            log_idx += 1
 
-        train_loss = train_loss / li
-        print('epoch: {:d} | train_loss: {:.4f}'.format(ei+1, train_loss))
-        if neptune is not None: neptune.log_metric('train loss', ei, train_loss)
-        train_loss = 0.0
+        train_loss = train_loss2 / li
+        print('epoch: {:d} | train_loss: {:.4f}'.format(ei+1, train_loss2))
+        if neptune is not None: neptune.log_metric('train loss2', ei, train_loss2)
+        train_loss2 = 0.0
 
         # evaluation code
         acc,prec,rec,f1=eval_main(model,valiter,device,neptune=None)
@@ -208,13 +213,12 @@ if __name__ == '__main__':
 
     params = vars(args)
 
-    '''
-    neptune.init('cjlee/secon2021')
+    neptune.init('cjlee/AnomalyDetection-Supervised')
     experiment = neptune.create_experiment(name=args.exp_name, params=params)
     args.out_file = experiment.id + '.pth'
-    '''
-    neptune=None
-    args.out_file = 'dummy.pth'
+
+    #neptune=None
+    #args.out_file = 'dummy.pth'
 
     print('parameters:')
     print('='*90)
