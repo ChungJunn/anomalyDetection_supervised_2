@@ -48,7 +48,6 @@ class DNN_classifier(nn.Module):
         x = self.fc4(x)
         return F.log_softmax(x, dim=1)
 
-
 class AD_SUP2_MODEL1(nn.Module):
     def __init__(self, dim_input, reduce):
         super(AD_SUP2_MODEL1, self).__init__()

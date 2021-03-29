@@ -55,6 +55,79 @@ class AD_SUP2_RNN_ITERATOR:
 
         return x_data, y_data, end_of_data
 
+class AD_SUP2_DNN_ITERATOR:
+    def __init__(self, tvt, data_dir, pkl_files, batch_size):
+        ## replace with add tvt to the dataset paths
+        pkl_paths=[]
+
+        for n in range(len(pkl_files)):
+            pkl_path=data_dir+tvt+'.'+pkl_files[n]
+            pkl_paths.append(pkl_path)
+
+        # iter for n_nodes
+        self.node_features=[]
+        self.n_nodes = len(pkl_paths) - 1
+
+        for n in range(len(pkl_paths)-1):
+            with open(pkl_paths[n], 'rb') as fp:
+                node_data = pkl.load(fp)
+                self.node_features.append(node_data)
+
+        with open(pkl_paths[-1], 'rb') as fp:
+            self.label= pkl.load(fp)
+
+        self.input = np.stack(self.node_features)
+        self.input = self.input.transpose(1,2,0,3)
+        
+        # load data and concatenate
+        self.input = self.input[:,-1,:,:]
+        '''
+        if self.n_nodes == 4:
+            self.input = np.concatenate((self.input[:,0,:],self.input[:,1,:],self.input[:,2,:],self.input[:,3,:]), axis=1)
+        elif self.n_nodes == 5:
+            self.input = np.concatenate((self.input[:,0,:],self.input[:,1,:],self.input[:,2,:],self.input[:,3,:], self.input[:,4,:]), axis=1)
+        else:
+            print('node number must be either 4 or 5')
+        '''
+
+        # prepare some properties
+        self.idx = 0
+        self.n_samples = self.input.shape[0]
+        self.n_node_features = self.input.shape[-1]
+        self.batch_size = batch_size
+
+    def reset(self):
+        self.idx=0
+        return
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        x_data = np.zeros((self.batch_size, self.n_nodes, self.n_node_features)) # T B E
+        y_data = np.zeros((self.batch_size,))
+        end_of_data = 0
+
+        if self.idx >= self.n_samples:
+            self.reset()
+            end_of_data=1
+
+        b_len = 0
+        for i in range(self.batch_size):
+            if self.idx+i >= self.n_samples:
+                break
+
+            x_data[i,:,:] = self.input[self.idx+i,:,:]
+            y_data[i] = self.label[self.idx+i]
+            b_len += 1
+
+        x_data = x_data[:b_len]
+        y_data = y_data[:b_len]
+        self.idx += self.batch_size
+
+        x_data, y_data = torch.tensor(x_data).type(torch.float32), torch.tensor(y_data).type(torch.int32)
+        return x_data, y_data, end_of_data # B E
+
 # create annotation and adjacency matrices and dataloader
 class AD_SUP2_ITERATOR:
     def __init__(self, tvt, data_dir, csv_files, batch_size):
@@ -178,7 +251,6 @@ if __name__ == '__main__':
 
         loss = F.nll_loss(out, label)
 
-        import pdb; pdb.set_trace()
         if end_of_data==1: break
 
     print('iter status: ', iter.get_status())

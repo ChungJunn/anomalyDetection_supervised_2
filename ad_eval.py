@@ -8,13 +8,16 @@ def eval_main(model, validiter, device, neptune=None):
 
     preds = []
     targets = []
+    clf_hidden = None
 
     # forward the whole dataset and obtain result
     for li, (anno, ys, end_of_data) in enumerate(validiter):
         anno = anno.to(dtype=torch.float32, device=device)
         ys = ys.to(dtype=torch.int64, device=device)
 
+        #outs, clf_hidden = model(anno, clf_hidden)
         outs = model(anno)
+
         outs = outs.detach().cpu().numpy()
         ys = ys.detach().cpu().numpy().reshape(-1,1)
 

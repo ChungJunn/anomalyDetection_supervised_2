@@ -76,30 +76,30 @@ if __name__ == '__main__':
 def test(model, dataset, batch_size, device, neptune):
     # obtain data_dir
     import os
-    data_dir = os.environ['HOME'] + '/autoregressor/data/' + dataset + '_data/gnn_data/'
+    data_dir = os.environ['HOME'] + '/autoregressor/data/' + dataset + '_data/21.03.10-gnn_data/'
 
     # load different dataset and create dataloader
-    csvs = ['rnn_len16.fw.csv','rnn_len16.ids.csv',
-            'rnn_len16.flowmon.csv','rnn_len16.dpi.csv',
-            'rnn_len16.lb.csv']
-    csv_label = 'rnn_len16.label.csv'
+    pkls = ['rnn_len16.fw.pkl','rnn_len16.ids.pkl',
+            'rnn_len16.flowmon.pkl','rnn_len16.dpi.pkl',
+            'rnn_len16.lb.pkl']
+    pkl_label = 'rnn_len16.label.pkl'
 
     if dataset == 'cnsm_exp1':
-        csv_files = csvs
-        csv_files.append(csv_label)
+        pkl_files = pkls
+        pkl_files.append(pkl_label)
 
     elif dataset == 'cnsm_exp2_1' or dataset == 'cnsm_exp2_2':
-        csv_files=[]
+        pkl_files=[]
         ns = [0,2,3,1] # hard-coding
         for n in ns:
-            csv_files.append(csvs[n])
-        csv_files.append(csv_label)
+            pkl_files.append(pkls[n])
+        pkl_files.append(pkl_label)
     else:
         print('in test(): dataset must be either \'cnsm_exp1\', \'cnsm_exp2_1\', \'cnsm_exp2_2\'')
         import sys; sys.exit(-1)
 
-    from ad_data import AD_SUP2_ITERATOR
-    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=data_dir, csv_files=csv_files, batch_size=batch_size)
+    from ad_data import AD_SUP2_RNN_ITERATOR
+    testiter = AD_SUP2_RNN_ITERATOR(tvt='sup_test', data_dir=data_dir, pkl_files=pkl_files, batch_size=batch_size)
 
     # evaluate the model and measure performance 
     acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=None)

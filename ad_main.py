@@ -22,29 +22,11 @@ from ad_model import AD_SUP2_MODEL2
 from ad_model import AD_SUP2_MODEL3
 from ad_model import AD_SUP2_MODEL4
 from ad_model import AD_SUP2_MODEL5
-from ad_data import AD_SUP2_ITERATOR, AD_SUP2_RNN_ITERATOR
+from ad_data import AD_SUP2_ITERATOR, AD_SUP2_RNN_ITERATOR, AD_SUP2_DNN_ITERATOR
 from ad_eval import eval_main
+from ad_test import test
 
 from ray import tune
-
-def validate(model, validiter, device, criterion):
-    valid_loss = 0.0
-
-    for li, (anno, label, end_of_data) in enumerate(validiter):
-        anno = anno.to(dtype=torch.float32, device=device)
-        label = label.to(dtype=torch.int64, device=device)
-
-        # go through loss function
-        output = model(anno)
-        loss = criterion(output, label)
-
-        # compute loss
-        valid_loss += loss.item()
-        if end_of_data == 1: break
-
-    valid_loss /= (li+1)
-
-    return valid_loss
 
 def train_main(args, neptune):
     device = torch.device('cuda:0')
@@ -74,9 +56,23 @@ def train_main(args, neptune):
     pkl_files.append(args.pkl_label) # append label 
 
     # declare dataset
+    '''
+    trainiter = AD_SUP2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
+    valiter = AD_SUP2_ITERATOR(tvt='sup_val', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
+    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
+    '''
+
+    # declare dataset
+    trainiter = AD_SUP2_DNN_ITERATOR(tvt='sup_train', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
+    valiter = AD_SUP2_DNN_ITERATOR(tvt='sup_val', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
+    testiter = AD_SUP2_DNN_ITERATOR(tvt='sup_test', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
+
+    '''
+    # declare dataset
     trainiter = AD_SUP2_RNN_ITERATOR(tvt='sup_train', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
     valiter = AD_SUP2_RNN_ITERATOR(tvt='sup_val', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
     testiter = AD_SUP2_RNN_ITERATOR(tvt='sup_test', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
+    '''
 
     # declare optimizer
     estring = "optim." + args.optimizer
@@ -102,8 +98,10 @@ def train_main(args, neptune):
 
             optimizer.zero_grad()
 
-            output, clf_hidden = model(anno, clf_hidden)
-            clf_hidden = [clf_hidden[0].detach(), clf_hidden[1].detach()]
+            # output, clf_hidden = model(anno, clf_hidden)
+            # clf_hidden = [clf_hidden[0].detach(), clf_hidden[1].detach()]
+
+            output = model(anno)
 
             # go through loss function
             loss = criterion(output, label)
@@ -111,26 +109,33 @@ def train_main(args, neptune):
 
             # optimizer
             optimizer.step()
-            train_loss1 += loss.item()
+            #train_loss1 += loss.item()
             train_loss2 += loss.item()
 
             if end_of_data == 1: break
 
+            '''
             if (log_idx % log_interval) == (log_interval - 1):
                 print('{:d} | {:d} | {:.4f}'.format(ei+1, log_idx+1, train_loss1))
                 if neptune is not None: neptune.log_metric('train loss (n_samples)', log_idx+1, train_loss1)
                 train_loss1 = 0.0
             log_idx += 1
+            '''
 
         train_loss = train_loss2 / li
         print('epoch: {:d} | train_loss: {:.4f}'.format(ei+1, train_loss2))
         if neptune is not None: neptune.log_metric('train loss2', ei, train_loss2)
         train_loss2 = 0.0
 
+        acc,prec,rec,f1=eval_main(model,trainiter,device,neptune=None)
+        print('epoch: {:d} | train_f1: {:.4f}'.format(ei+1, f1))
+        if neptune is not None: neptune.log_metric('train f1', ei, f1)
         # evaluation code
+        '''
         acc,prec,rec,f1=eval_main(model,valiter,device,neptune=None)
         print('epoch: {:d} | valid_f1: {:.4f}'.format(ei+1, f1))
         if neptune is not None: neptune.log_metric('valid f1', ei, f1)
+        '''
 
         # if tune, report the metrics / also test metric every 5 epochs
         if args.tune == 1:
@@ -155,7 +160,6 @@ def train_main(args, neptune):
     if args.tune == 0:
         model = torch.load(savedir)
         
-        from ad_test import test
         datasets = ['cnsm_exp1', 'cnsm_exp2_1', 'cnsm_exp2_2']
         for dset in datasets:
             acc, prec, rec, f1 = test(model, dset, args.batch_size, device, neptune)
@@ -213,12 +217,12 @@ if __name__ == '__main__':
 
     params = vars(args)
 
-    neptune.init('cjlee/AnomalyDetection-Supervised')
-    experiment = neptune.create_experiment(name=args.exp_name, params=params)
-    args.out_file = experiment.id + '.pth'
+    #neptune.init('cjlee/AnomalyDetection-Supervised')
+    #experiment = neptune.create_experiment(name=args.exp_name, params=params)
+    #args.out_file = experiment.id + '.pth'
 
-    #neptune=None
-    #args.out_file = 'dummy.pth'
+    neptune=None
+    args.out_file = 'dummy.pth'
 
     print('parameters:')
     print('='*90)
