@@ -46,6 +46,7 @@ class DNN_classifier(nn.Module):
         x = self.relu(self.fc2(x))
         x = self.relu(self.fc3(x))
         x = self.fc4(x)
+
         return F.log_softmax(x, dim=1)
 
 class AD_SUP2_MODEL1(nn.Module):

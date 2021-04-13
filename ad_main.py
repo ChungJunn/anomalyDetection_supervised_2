@@ -22,7 +22,7 @@ from ad_model import AD_SUP2_MODEL2
 from ad_model import AD_SUP2_MODEL3
 from ad_model import AD_SUP2_MODEL4
 from ad_model import AD_SUP2_MODEL5
-from ad_data import AD_SUP2_ITERATOR, AD_SUP2_RNN_ITERATOR, AD_SUP2_DNN_ITERATOR
+from ad_data import AD_SUP2_ITERATOR, AD_SUP2_RNN_ITERATOR, AD_SUP2_DNN_ITERATOR, AD_SUP2_RNN_ITERATOR2
 from ad_eval import eval_main
 from ad_test import test
 
@@ -55,23 +55,33 @@ def train_main(args, neptune):
         pkl_files.append(pkl_file)
     pkl_files.append(args.pkl_label) # append label 
 
-    # declare dataset
-    '''
-    trainiter = AD_SUP2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-    valiter = AD_SUP2_ITERATOR(tvt='sup_val', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-    '''
+    #TODO: temporary
+    csv_path = '/home/chl/autoregressor/data/raw/cnsm_exp2_1_data.csv'
+    ids_path = '/home/chl/autoregressor/data/cnsm_exp2_1_data/indices.rnn_len16.pkl'
+    stat_path = '/home/chl/autoregressor/data/raw/cnsm_exp2_1_data.csv.stat'
+    data_name = 'cnsm_exp2_1_data'
+    rnn_len = 16
+
+    trainiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_train', csv_path=csv_path, ids_path=ids_path, stat_path=stat_path, data_name=data_name, batch_size=args.batch_size, rnn_len=rnn_len)
+    valiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_val', csv_path=csv_path, ids_path=ids_path, stat_path=stat_path, data_name=data_name, batch_size=args.batch_size, rnn_len=rnn_len)
+    testiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_test', csv_path=csv_path, ids_path=ids_path, stat_path=stat_path, data_name=data_name, batch_size=args.batch_size, rnn_len=rnn_len)
 
     # declare dataset
+    '''
     trainiter = AD_SUP2_DNN_ITERATOR(tvt='sup_train', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
     valiter = AD_SUP2_DNN_ITERATOR(tvt='sup_val', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
     testiter = AD_SUP2_DNN_ITERATOR(tvt='sup_test', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-
+    '''
     '''
     # declare dataset
     trainiter = AD_SUP2_RNN_ITERATOR(tvt='sup_train', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
     valiter = AD_SUP2_RNN_ITERATOR(tvt='sup_val', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
     testiter = AD_SUP2_RNN_ITERATOR(tvt='sup_test', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
+    '''
+    '''
+    trainiter = AD_SUP2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
+    valiter = AD_SUP2_ITERATOR(tvt='sup_val', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
+    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
     '''
 
     # declare optimizer
@@ -97,9 +107,6 @@ def train_main(args, neptune):
             label = label.to(dtype=torch.int64, device=device)
 
             optimizer.zero_grad()
-
-            # output, clf_hidden = model(anno, clf_hidden)
-            # clf_hidden = [clf_hidden[0].detach(), clf_hidden[1].detach()]
 
             output = model(anno)
 
@@ -127,9 +134,9 @@ def train_main(args, neptune):
         if neptune is not None: neptune.log_metric('train loss2', ei, train_loss2)
         train_loss2 = 0.0
 
-        acc,prec,rec,f1=eval_main(model,trainiter,device,neptune=None)
-        print('epoch: {:d} | train_f1: {:.4f}'.format(ei+1, f1))
-        if neptune is not None: neptune.log_metric('train f1', ei, f1)
+        acc,prec,rec,f1=eval_main(model,valiter,device,neptune=None)
+        print('epoch: {:d} | val_f1: {:.4f}'.format(ei+1, f1))
+        if neptune is not None: neptune.log_metric('valid f1', ei, f1)
         # evaluation code
         '''
         acc,prec,rec,f1=eval_main(model,valiter,device,neptune=None)
