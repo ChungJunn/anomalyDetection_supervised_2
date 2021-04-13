@@ -49,11 +49,13 @@ def train_main(args, neptune):
 
     print('# model', model)
 
+    '''
     pkl_files=[]
     for n in range(1, args.n_nodes+1):
         pkl_file = eval('args.pkl_file' + str(n))
         pkl_files.append(pkl_file)
     pkl_files.append(args.pkl_label) # append label 
+    '''
 
     #TODO: temporary
     csv_path = '/home/chl/autoregressor/data/raw/cnsm_exp2_1_data.csv'
@@ -62,9 +64,9 @@ def train_main(args, neptune):
     data_name = 'cnsm_exp2_1_data'
     rnn_len = 16
 
-    trainiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_train', csv_path=csv_path, ids_path=ids_path, stat_path=stat_path, data_name=data_name, batch_size=args.batch_size, rnn_len=rnn_len)
-    valiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_val', csv_path=csv_path, ids_path=ids_path, stat_path=stat_path, data_name=data_name, batch_size=args.batch_size, rnn_len=rnn_len)
-    testiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_test', csv_path=csv_path, ids_path=ids_path, stat_path=stat_path, data_name=data_name, batch_size=args.batch_size, rnn_len=rnn_len)
+    trainiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_train', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len)
+    valiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_val', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len)
+    testiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_test', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len)
 
     # declare dataset
     '''
@@ -184,13 +186,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str)
     parser.add_argument('--data_dir', type=str)
-    parser.add_argument('--pkl_file1', type=str)
-    parser.add_argument('--pkl_file2', type=str)
-    parser.add_argument('--pkl_file3', type=str)
-    parser.add_argument('--pkl_file4', type=str)
-    parser.add_argument('--pkl_file5', type=str)
-    parser.add_argument('--pkl_label', type=str)
-    parser.add_argument('--n_nodes', type=int)
     parser.add_argument('--reduce', type=str)
     parser.add_argument('--optimizer', type=str)
     parser.add_argument('--lr', type=float)
@@ -219,6 +214,13 @@ if __name__ == '__main__':
     parser.add_argument('--clf_dim_lstm_hidden', type=int)
     parser.add_argument('--clf_dim_fc_hidden', type=int)
     parser.add_argument('--clf_dim_output', type=int)
+
+    # dataset params
+    parser.add_argument('--csv_path', type=str)
+    parser.add_argument('--ids_path', type=str)
+    parser.add_argument('--stat_path', type=str)
+    parser.add_argument('--data_name', type=str)
+    parser.add_argument('--rnn_len', type=int)
 
     args = parser.parse_args()
 
