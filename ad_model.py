@@ -307,7 +307,7 @@ class AD_SUP2_MODEL2(nn.Module):
         super(AD_SUP2_MODEL2, self).__init__()
 
         if bidirectional==1:
-            dim_classifier_input=dim_lstm_hidden*2
+            dim_classifier_input=dim_lstm_hidden * 2
         else:
             dim_classifier_input=dim_lstm_hidden
 
@@ -321,9 +321,9 @@ class AD_SUP2_MODEL2(nn.Module):
 
         return logits
 
-class AD_SUP2_MODEL5(nn.Module): # DNN-enc + Max-pooling
+class AD_SUP2_MODEL4(nn.Module): # DNN-enc + DNN-classifier
     def __init__(self, dim_input, dim_enc, reduce):
-        super(AD_SUP2_MODEL5, self).__init__()
+        super(AD_SUP2_MODEL4, self).__init__()
 
         self.encoder=DNN_encoder(dim_input, dim_enc, reduce)
         self.classifier=DNN_classifier(dim_input=dim_enc)
@@ -334,9 +334,28 @@ class AD_SUP2_MODEL5(nn.Module): # DNN-enc + Max-pooling
 
         return logits
 
-class AD_SUP2_MODEL4(nn.Module): # RNN classifier
+class AD_SUP2_MODEL5(nn.Module): # DNN-enc + RNN-classifier
+    def __init__(self, dim_input, dim_enc, reduce, clf_dim_lstm_hidden, clf_dim_fc_hidden, clf_dim_output):
+        super(AD_SUP2_MODEL5, self).__init__()
+
+        dim_classifier_input = dim_enc
+
+        self.encoder=DNN_encoder(dim_input, dim_enc, reduce)
+        self.classifier=RNN_classifier(dim_input=dim_classifier_input, dim_lstm_hidden=clf_dim_lstm_hidden, dim_fc_hidden=clf_dim_fc_hidden, dim_output=clf_dim_output)
+
+    def forward(self, x):
+        x = self.encoder(x)
+
+        x = x.unsqueeze(1)
+
+        logits, _ = self.classifier(x)
+        logits = logits[-1,:,:]
+
+        return logits
+
+class AD_SUP2_MODEL6(nn.Module): # RNN-enc + RNN classifier
     def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, use_feature_mapping, dim_feature_mapping, nlayer, dim_att, clf_dim_lstm_hidden, clf_dim_fc_hidden, clf_dim_output):
-        super(AD_SUP2_MODEL4, self).__init__()
+        super(AD_SUP2_MODEL6, self).__init__()
         if bidirectional==1:
             dim_classifier_input=dim_lstm_hidden*2
         else:

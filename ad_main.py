@@ -24,7 +24,7 @@ from ad_model import AD_SUP2_MODEL4
 from ad_model import AD_SUP2_MODEL5
 from ad_data import AD_SUP2_ITERATOR, AD_SUP2_RNN_ITERATOR, AD_SUP2_DNN_ITERATOR, AD_SUP2_RNN_ITERATOR2
 from ad_eval import eval_main
-from ad_test import test
+from ad_test_temp import test
 
 from ray import tune
 
@@ -33,58 +33,32 @@ def train_main(args, neptune):
     criterion = F.nll_loss
 
     # declare model
-    if args.encoder=='none':
+    if args.encoder=='none' and args.classifier=='dnn':
         model = AD_SUP2_MODEL1(reduce=args.reduce, dim_input=args.dim_input).to(device)
-    elif args.encoder=='rnn' or args.encoder=='bidirectionalrnn':
+    elif (args.encoder=='rnn' or args.encoder=='bidirectionalrnn') and args.classifier=='dnn':
         model = AD_SUP2_MODEL2(dim_input=args.dim_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer,dim_att=args.dim_att).to(device)
-    elif args.encoder=='transformer':
+    elif args.encoder=='transformer' and args.classifier=='dnn':
         model = AD_SUP2_MODEL3(dim_input=args.dim_input, nhead=args.nhead, dim_feedforward=args.dim_feedforward, reduce=args.reduce, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer).to(device)
-    elif args.encoder=='dnn':
-        model = AD_SUP2_MODEL5(dim_input=args.dim_input, dim_enc=args.dim_enc, reduce=args.reduce).to(device)
-    elif args.encoder=='rnn-classifier':
-        model = AD_SUP2_MODEL4(dim_input=args.dim_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer, dim_att=args.dim_att, clf_dim_lstm_hidden=args.clf_dim_lstm_hidden, clf_dim_fc_hidden=args.clf_dim_fc_hidden, clf_dim_output=args.clf_dim_output).to(device)
+    elif args.encoder=='dnn' and args.classifier=='dnn':
+        model = AD_SUP2_MODEL4(dim_input=args.dim_input, dim_enc=args.dim_enc, reduce=args.reduce).to(device)
+    elif args.encoder=='dnn' and args.classifier=='rnn':
+        model = AD_SUP2_MODEL5(dim_input=args.dim_input, dim_enc=args.dim_enc, reduce=args.reduce,clf_dim_lstm_hidden=args.clf_dim_lstm_hidden, clf_dim_fc_hidden=args.clf_dim_fc_hidden, clf_dim_output=args.clf_dim_output).to(device)
+    elif args.encoder=='rnn' and args.classifier=='rnn':
+        model = AD_SUP2_MODEL6(dim_input=args.dim_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer, dim_att=args.dim_att, clf_dim_lstm_hidden=args.clf_dim_lstm_hidden, clf_dim_fc_hidden=args.clf_dim_fc_hidden, clf_dim_output=args.clf_dim_output).to(device)
     else:
         print("model must be either \'none\',\'dnn\', \'rnn\', \'transformer\'")
         sys.exit(0)
 
     print('# model', model)
 
-    '''
-    pkl_files=[]
-    for n in range(1, args.n_nodes+1):
-        pkl_file = eval('args.pkl_file' + str(n))
-        pkl_files.append(pkl_file)
-    pkl_files.append(args.pkl_label) # append label 
-    '''
+    if args.classifier == 'rnn':
+        test_dnn = False
+    else:
+        test_dnn = True
 
-    #TODO: temporary
-    csv_path = '/home/chl/autoregressor/data/raw/cnsm_exp2_1_data.csv'
-    ids_path = '/home/chl/autoregressor/data/cnsm_exp2_1_data/indices.rnn_len16.pkl'
-    stat_path = '/home/chl/autoregressor/data/raw/cnsm_exp2_1_data.csv.stat'
-    data_name = 'cnsm_exp2_1_data'
-    rnn_len = 16
-
-    trainiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_train', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len)
-    valiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_val', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len)
-    testiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_test', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len)
-
-    # declare dataset
-    '''
-    trainiter = AD_SUP2_DNN_ITERATOR(tvt='sup_train', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-    valiter = AD_SUP2_DNN_ITERATOR(tvt='sup_val', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-    testiter = AD_SUP2_DNN_ITERATOR(tvt='sup_test', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-    '''
-    '''
-    # declare dataset
-    trainiter = AD_SUP2_RNN_ITERATOR(tvt='sup_train', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-    valiter = AD_SUP2_RNN_ITERATOR(tvt='sup_val', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-    testiter = AD_SUP2_RNN_ITERATOR(tvt='sup_test', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-    '''
-    '''
-    trainiter = AD_SUP2_ITERATOR(tvt='sup_train', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-    valiter = AD_SUP2_ITERATOR(tvt='sup_val', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-    testiter = AD_SUP2_ITERATOR(tvt='sup_test', data_dir=args.data_dir, pkl_files=pkl_files, batch_size=args.batch_size)
-    '''
+    trainiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_train', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len, test_dnn=test_dnn)
+    valiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_val', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len, test_dnn=test_dnn)
+    testiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_test', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len, test_dnn=test_dnn)
 
     # declare optimizer
     estring = "optim." + args.optimizer
@@ -118,20 +92,18 @@ def train_main(args, neptune):
 
             # optimizer
             optimizer.step()
-            #train_loss1 += loss.item()
+            train_loss1 += loss.item()
             train_loss2 += loss.item()
 
             if end_of_data == 1: break
 
-            '''
             if (log_idx % log_interval) == (log_interval - 1):
                 print('{:d} | {:d} | {:.4f}'.format(ei+1, log_idx+1, train_loss1))
                 if neptune is not None: neptune.log_metric('train loss (n_samples)', log_idx+1, train_loss1)
                 train_loss1 = 0.0
             log_idx += 1
-            '''
 
-        train_loss = train_loss2 / li
+        train_loss2 = train_loss2 / li
         print('epoch: {:d} | train_loss: {:.4f}'.format(ei+1, train_loss2))
         if neptune is not None: neptune.log_metric('train loss2', ei, train_loss2)
         train_loss2 = 0.0
@@ -171,7 +143,7 @@ def train_main(args, neptune):
         
         datasets = ['cnsm_exp1', 'cnsm_exp2_1', 'cnsm_exp2_2']
         for dset in datasets:
-            acc, prec, rec, f1 = test(model, dset, args.batch_size, device, neptune)
+            acc, prec, rec, f1 = test(model, dset, args.rnn_len, args.batch_size, device, neptune)
 
             if neptune is not None:
                 neptune.set_property(dset+'_acc', acc)
@@ -194,6 +166,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_epoch', type=int)
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--encoder', type=str)
+    parser.add_argument('--classifier', type=str)
     parser.add_argument('--tune', type=int)
     # Simple model params
     parser.add_argument('--dim_input', type=int)
@@ -226,12 +199,12 @@ if __name__ == '__main__':
 
     params = vars(args)
 
-    #neptune.init('cjlee/AnomalyDetection-Supervised')
-    #experiment = neptune.create_experiment(name=args.exp_name, params=params)
-    #args.out_file = experiment.id + '.pth'
+    neptune.init('cjlee/AnomalyDetection-Supervised')
+    experiment = neptune.create_experiment(name=args.exp_name, params=params)
+    args.out_file = experiment.id + '.pth'
 
-    neptune=None
-    args.out_file = 'dummy.pth'
+    #neptune=None
+    #args.out_file = 'dummy.pth'
 
     print('parameters:')
     print('='*90)

@@ -125,6 +125,8 @@ class AD_SUP2_RNN_ITERATOR2:
 
         if self.test_dnn == True:
             x_data = x_data[:,-1,:,:]
+        else:
+            x_data = x_data.squeeze()
 
         return x_data, y_data, end_of_data
 
