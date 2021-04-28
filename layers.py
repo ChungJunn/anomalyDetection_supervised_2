@@ -53,6 +53,7 @@ class PositionalEncoding(nn.Module):
         return torch.FloatTensor(pos_enc_table).unsqueeze(0)
 
     def forward(self, x, index=-1):
+        import pdb; pdb.set_trace()
         if index >= 0:
             out = x + self.pos_table[:, index] # for the rnn decoding step
         else:

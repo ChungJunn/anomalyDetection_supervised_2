@@ -22,9 +22,10 @@ from ad_model import AD_SUP2_MODEL2
 from ad_model import AD_SUP2_MODEL3
 from ad_model import AD_SUP2_MODEL4
 from ad_model import AD_SUP2_MODEL5
+from ad_model import AD_SUP2_MODEL6
+from ad_model import AD_SUP2_MODEL7
 from ad_data import AD_SUP2_ITERATOR, AD_SUP2_RNN_ITERATOR, AD_SUP2_DNN_ITERATOR, AD_SUP2_RNN_ITERATOR2
-from ad_eval import eval_main
-from ad_test_temp import test
+from ad_test import eval_main, test
 
 from ray import tune
 
@@ -35,16 +36,23 @@ def train_main(args, neptune):
     # declare model
     if args.encoder=='none' and args.classifier=='dnn':
         model = AD_SUP2_MODEL1(reduce=args.reduce, dim_input=args.dim_input).to(device)
-    elif (args.encoder=='rnn' or args.encoder=='bidirectionalrnn') and args.classifier=='dnn':
-        model = AD_SUP2_MODEL2(dim_input=args.dim_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer,dim_att=args.dim_att).to(device)
+    elif args.encoder=='rnn' and args.classifier=='dnn':
+        model = AD_SUP2_MODEL2(args).to(device)
+
     elif args.encoder=='transformer' and args.classifier=='dnn':
         model = AD_SUP2_MODEL3(dim_input=args.dim_input, nhead=args.nhead, dim_feedforward=args.dim_feedforward, reduce=args.reduce, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer).to(device)
+
     elif args.encoder=='dnn' and args.classifier=='dnn':
         model = AD_SUP2_MODEL4(dim_input=args.dim_input, dim_enc=args.dim_enc, reduce=args.reduce).to(device)
+
     elif args.encoder=='dnn' and args.classifier=='rnn':
-        model = AD_SUP2_MODEL5(dim_input=args.dim_input, dim_enc=args.dim_enc, reduce=args.reduce,clf_dim_lstm_hidden=args.clf_dim_lstm_hidden, clf_dim_fc_hidden=args.clf_dim_fc_hidden, clf_dim_output=args.clf_dim_output).to(device)
+        model = AD_SUP2_MODEL5(dim_input=args.dim_input, dim_enc=args.dim_enc, reduce=args.reduce, clf_n_lstm_layers=args.clf_n_lstm_layers, clf_n_fc_layers=args.clf_n_fc_layers, clf_dim_lstm_hidden=args.clf_dim_lstm_hidden, clf_dim_fc_hidden=args.clf_dim_fc_hidden, clf_dim_output=args.clf_dim_output).to(device)
+        
     elif args.encoder=='rnn' and args.classifier=='rnn':
-        model = AD_SUP2_MODEL6(dim_input=args.dim_input, dim_lstm_hidden=args.dim_lstm_hidden, reduce=args.reduce, bidirectional=args.bidirectional, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer, dim_att=args.dim_att, clf_dim_lstm_hidden=args.clf_dim_lstm_hidden, clf_dim_fc_hidden=args.clf_dim_fc_hidden, clf_dim_output=args.clf_dim_output).to(device)
+        model = AD_SUP2_MODEL6(args).to(device)
+
+    elif args.encoder=='transformer' and args.classifier=='rnn':
+        model = AD_SUP2_MODEL7(args, device).to(device)
     else:
         print("model must be either \'none\',\'dnn\', \'rnn\', \'transformer\'")
         sys.exit(0)
@@ -72,8 +80,7 @@ def train_main(args, neptune):
     log_idx=0
     bc = 0
     best_val_f1 = None
-    if args.tune == 0:
-        savedir = './result/' + args.out_file
+    savedir = './result/' + args.out_file
     n_samples = trainiter.n_samples
     clf_hidden = None
 
@@ -98,8 +105,8 @@ def train_main(args, neptune):
             if end_of_data == 1: break
 
             if (log_idx % log_interval) == (log_interval - 1):
-                print('{:d} | {:d} | {:.4f}'.format(ei+1, log_idx+1, train_loss1))
-                if neptune is not None: neptune.log_metric('train loss (n_samples)', log_idx+1, train_loss1)
+                print('{:d} | {:d} | {:.4f}'.format(ei+1, log_idx+1, train_loss1/log_interval))
+                if neptune is not None: neptune.log_metric('train loss (n_samples)', log_idx+1, train_loss1/log_interval)
                 train_loss1 = 0.0
             log_idx += 1
 
@@ -108,26 +115,12 @@ def train_main(args, neptune):
         if neptune is not None: neptune.log_metric('train loss2', ei, train_loss2)
         train_loss2 = 0.0
 
-        acc,prec,rec,f1=eval_main(model,valiter,device,neptune=None)
+        acc,prec,rec,f1=eval_main(model,valiter,device)
         print('epoch: {:d} | val_f1: {:.4f}'.format(ei+1, f1))
         if neptune is not None: neptune.log_metric('valid f1', ei, f1)
-        # evaluation code
-        '''
-        acc,prec,rec,f1=eval_main(model,valiter,device,neptune=None)
-        print('epoch: {:d} | valid_f1: {:.4f}'.format(ei+1, f1))
-        if neptune is not None: neptune.log_metric('valid f1', ei, f1)
-        '''
-
-        # if tune, report the metrics / also test metric every 5 epochs
-        if args.tune == 1:
-            tune.report(train_loss=train_loss, val_f1=f1, test_f1=-1)
-            if ei % args.test_log_interval == (args.test_log_interval-1):
-                test_acc,test_prec,test_rec,test_f1=eval_main(model,testiter,device,neptune=None)
-                tune.report(train_loss=train_loss, val_f1=f1, test_f1=test_f1)
 
         if ei == 0 or f1 > best_val_f1:
-            if args.tune == 0:
-                torch.save(model, savedir)
+            torch.save(model, savedir)
             bc = 0
             best_val_f1=f1
             print('found new best model')
@@ -138,18 +131,20 @@ def train_main(args, neptune):
                 break
             print('bad counter == %d' % (bc))
 
-    if args.tune == 0:
-        model = torch.load(savedir)
-        
-        datasets = ['cnsm_exp1', 'cnsm_exp2_1', 'cnsm_exp2_2']
-        for dset in datasets:
-            acc, prec, rec, f1 = test(model, dset, args.rnn_len, args.batch_size, device, neptune)
+    model = torch.load(savedir)
+    
+    datasets = ['cnsm_exp1', 'cnsm_exp2_1', 'cnsm_exp2_2']
+    for dset in datasets:
+        acc, prec, rec, f1 = test(model, dset, args.batch_size, args.rnn_len, test_dnn, device)
 
-            if neptune is not None:
-                neptune.set_property(dset+'_acc', acc)
-                neptune.set_property(dset+'_prec', prec)
-                neptune.set_property(dset+'_rec', rec)
-                neptune.set_property(dset+'_f1', f1)
+        print('{} | acc: {:.4f} | prec: {:.4f} | rec: {:.4f} | f1: {:.4f}'
+              .format(dset, acc, prec, rec, f1))
+
+        if neptune is not None:
+            neptune.set_property(dset+'_acc', acc)
+            neptune.set_property(dset+'_prec', prec)
+            neptune.set_property(dset+'_rec', rec)
+            neptune.set_property(dset+'_f1', f1)
 
     return
 
@@ -157,49 +152,52 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str)
-    parser.add_argument('--data_dir', type=str)
-    parser.add_argument('--reduce', type=str)
-    parser.add_argument('--optimizer', type=str)
-    parser.add_argument('--lr', type=float)
-    parser.add_argument('--patience', type=float)
+    # dataset
     parser.add_argument('--dataset', type=str)
-    parser.add_argument('--max_epoch', type=int)
-    parser.add_argument('--batch_size', type=int)
-    parser.add_argument('--encoder', type=str)
-    parser.add_argument('--classifier', type=str)
-    parser.add_argument('--tune', type=int)
-    # Simple model params
     parser.add_argument('--dim_input', type=int)
-    # RNN params
-    parser.add_argument('--bidirectional', type=int)
-    parser.add_argument('--dim_lstm_hidden', type=int)
-    parser.add_argument('--dim_att', type=int)
-    # RNN and Transformer param
-    parser.add_argument('--nlayer', type=int)
-    parser.add_argument('--use_feature_mapping', type=int)
-    parser.add_argument('--dim_feature_mapping', type=int)
-    # Transformer params 
-    parser.add_argument('--nhead', type=int)
-    parser.add_argument('--dim_feedforward', type=int)
-    # DNN-enc params
-    parser.add_argument('--dim_enc', type=int)
-    # clf params
-    parser.add_argument('--clf_dim_lstm_hidden', type=int)
-    parser.add_argument('--clf_dim_fc_hidden', type=int)
-    parser.add_argument('--clf_dim_output', type=int)
-
-    # dataset params
+    parser.add_argument('--rnn_len', type=int)
     parser.add_argument('--csv_path', type=str)
     parser.add_argument('--ids_path', type=str)
     parser.add_argument('--stat_path', type=str)
     parser.add_argument('--data_name', type=str)
-    parser.add_argument('--rnn_len', type=int)
+    # feature mapping
+    parser.add_argument('--use_feature_mapping', type=int)
+    parser.add_argument('--dim_feature_mapping', type=int)
+
+    # enc
+    parser.add_argument('--encoder', type=str)
+    parser.add_argument('--nlayer', type=int)
+    # dnn-enc
+    parser.add_argument('--dim_enc', type=int)
+    # rnn-enc
+    parser.add_argument('--bidirectional', type=int)
+    parser.add_argument('--dim_lstm_hidden', type=int)
+    # transformer-enc
+    parser.add_argument('--nhead', type=int)
+    parser.add_argument('--dim_feedforward', type=int)
+    # readout
+    parser.add_argument('--reduce', type=str)
+    parser.add_argument('--dim_att', type=int)
+
+    # clf
+    parser.add_argument('--classifier', type=str)
+    parser.add_argument('--clf_n_lstm_layers', type=int)
+    parser.add_argument('--clf_n_fc_layers', type=int)
+    parser.add_argument('--clf_dim_lstm_hidden', type=int)
+    parser.add_argument('--clf_dim_fc_hidden', type=int)
+    parser.add_argument('--clf_dim_output', type=int)
+
+    # training parameter
+    parser.add_argument('--optimizer', type=str)
+    parser.add_argument('--lr', type=float)
+    parser.add_argument('--batch_size', type=int)
+    parser.add_argument('--patience', type=float)
+    parser.add_argument('--max_epoch', type=int)
 
     args = parser.parse_args()
-
     params = vars(args)
 
-    neptune.init('cjlee/AnomalyDetection-Supervised')
+    neptune.init('cjlee/secon2021')
     experiment = neptune.create_experiment(name=args.exp_name, params=params)
     args.out_file = experiment.id + '.pth'
 
