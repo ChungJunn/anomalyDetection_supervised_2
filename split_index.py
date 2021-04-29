@@ -8,7 +8,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='cnsm_exp2_1')
     parser.add_argument('--rnn_len', type=int, default=16)
-    parser.add_argument('--ratios', type=str, default='[0.8, 0.1, 0.1]')
+    parser.add_argument('--ratios', type=str, default='[0.65, 0.1, 0.25]')
     args = parser.parse_args()
 
     base_dir = '/home/chl/autoregressor/data/raw/'

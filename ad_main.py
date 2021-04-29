@@ -68,6 +68,10 @@ def train_main(args, neptune):
     valiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_val', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len, test_dnn=test_dnn)
     testiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_test', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len, test_dnn=test_dnn)
 
+    print('trainiter: {} samples'.format(len(trainiter)))
+    print('validiter: {} samples'.format(len(valiter)))
+    print('testiter: {} samples'.format(len(testiter)))
+
     # declare optimizer
     estring = "optim." + args.optimizer
     optimizer = eval(estring)(model.parameters(), lr=args.lr)
@@ -197,7 +201,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     params = vars(args)
 
-    neptune.init('cjlee/secon2021')
+    neptune.init('cjlee/apnoms2021')
     experiment = neptune.create_experiment(name=args.exp_name, params=params)
     args.out_file = experiment.id + '.pth'
 

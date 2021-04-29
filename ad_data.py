@@ -94,6 +94,9 @@ class AD_SUP2_RNN_ITERATOR2:
     def __iter__(self):
         return self
 
+    def __len__(self):
+        return self.n_ids
+
     def __next__(self):
         x_data = np.zeros((self.batch_size, self.rnn_len, self.n_nodes, self.n_features)) # T B E
         y_data = np.zeros((self.batch_size)) # T B E

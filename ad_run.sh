@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='21.04.17.exp1'
+EXP_NAME='210429.change_testset_ratio'
 
 # dataset
 DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
@@ -22,28 +22,28 @@ NLAYER=2
 ## DNN-enc
 DIM_ENC=-1
 ## RNN-enc
-BIDIRECTIONAL=1
+BIDIRECTIONAL=-1
 DIM_LSTM_HIDDEN=-1
 ## transformer-enc
 NHEAD=4
 DIM_FEEDFORWARD=48
 
 # readout
-REDUCE=-1 # mean, max, or self-attention
-DIM_ATT=40
+REDUCE='max' # mean, max, or self-attention
+DIM_ATT=-1
 
 # clf
-CLASSIFIER='rnn' # dnn or rnn
-CLF_N_LSTM_LAYERS=1
+CLASSIFIER='dnn' # dnn or rnn
+CLF_N_LSTM_LAYERS=-1
 CLF_N_FC_LAYERS=3
-CLF_DIM_LSTM_HIDDEN=200
+CLF_DIM_LSTM_HIDDEN=-1
 CLF_DIM_FC_HIDDEN=600
 CLF_DIM_OUTPUT=2
 
 # training parameter
 OPTIMIZER='Adam'
 LR=0.001
-BATCH_SIZE=1
+BATCH_SIZE=64
 PATIENCE=20
 MAX_EPOCH=1000
 
