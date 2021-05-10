@@ -2,15 +2,35 @@ import pandas as pd
 import numpy as np
 import pickle as pkl
 import torch
+import sys
 
 class AD_SUP2_RNN_ITERATOR2:
-    def __init__(self, tvt, csv_path, ids_path, stat_path, data_name, batch_size, rnn_len, test_dnn=True):
+    def __init__(self, tvt, csv_path, ids_path, stat_path, dict_path, data_name, batch_size, rnn_len, test_dnn, label):
         # load csv, ids
         df_data = pd.read_csv(csv_path)
         np_data = np.array(df_data)
-        
         self.data = np_data[:,:-3].astype(np.float32)
-        self.label = np_data[:,-3].astype(np.int64)
+
+        if label == 'sla':
+            label_i = -3
+            self.label = np_data[:,label_i]
+
+        elif label == 'rcl':
+            label_i = -1
+            self.label = np_data[:,label_i]
+
+            # import dictionary
+            with open(dict_path, 'rb') as fp:
+                d = pkl.load(fp)
+            class2idx = d['class2idx']
+
+            # transform the labels to integers
+            for n in range(len(self.label)):
+                self.label[n] = class2idx[self.label[n]]
+            self.label = self.label.astype(np.int64)
+        else:
+            print('label must be either sla or rcl')
+            sys.exit(0)
         
         with open(ids_path, 'rb') as fp:
             ids = pkl.load(fp)

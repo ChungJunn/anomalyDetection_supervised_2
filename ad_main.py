@@ -17,56 +17,37 @@ import time
 import argparse
 import neptune
 
-from ad_model import AD_SUP2_MODEL1
-from ad_model import AD_SUP2_MODEL2
-from ad_model import AD_SUP2_MODEL3
-from ad_model import AD_SUP2_MODEL4
-from ad_model import AD_SUP2_MODEL5
 from ad_model import AD_SUP2_MODEL6
 from ad_model import AD_SUP2_MODEL7
-from ad_data import AD_SUP2_ITERATOR, AD_SUP2_RNN_ITERATOR, AD_SUP2_DNN_ITERATOR, AD_SUP2_RNN_ITERATOR2
+from ad_data import AD_SUP2_RNN_ITERATOR2
 from ad_test import eval_main, test
-
-from ray import tune
 
 def train_main(args, neptune):
     device = torch.device('cuda:0')
     criterion = F.nll_loss
-
-    # declare model
-    if args.encoder=='none' and args.classifier=='dnn':
-        model = AD_SUP2_MODEL1(reduce=args.reduce, dim_input=args.dim_input).to(device)
-    elif args.encoder=='rnn' and args.classifier=='dnn':
-        model = AD_SUP2_MODEL2(args).to(device)
-
-    elif args.encoder=='transformer' and args.classifier=='dnn':
-        model = AD_SUP2_MODEL3(dim_input=args.dim_input, nhead=args.nhead, dim_feedforward=args.dim_feedforward, reduce=args.reduce, use_feature_mapping=args.use_feature_mapping, dim_feature_mapping=args.dim_feature_mapping, nlayer=args.nlayer).to(device)
-
-    elif args.encoder=='dnn' and args.classifier=='dnn':
-        model = AD_SUP2_MODEL4(dim_input=args.dim_input, dim_enc=args.dim_enc, reduce=args.reduce).to(device)
-
-    elif args.encoder=='dnn' and args.classifier=='rnn':
-        model = AD_SUP2_MODEL5(dim_input=args.dim_input, dim_enc=args.dim_enc, reduce=args.reduce, clf_n_lstm_layers=args.clf_n_lstm_layers, clf_n_fc_layers=args.clf_n_fc_layers, clf_dim_lstm_hidden=args.clf_dim_lstm_hidden, clf_dim_fc_hidden=args.clf_dim_fc_hidden, clf_dim_output=args.clf_dim_output).to(device)
         
-    elif args.encoder=='rnn' and args.classifier=='rnn':
-        model = AD_SUP2_MODEL6(args).to(device)
-
-    elif args.encoder=='transformer' and args.classifier=='rnn':
-        model = AD_SUP2_MODEL7(args, device).to(device)
-    else:
-        print("model must be either \'none\',\'dnn\', \'rnn\', \'transformer\'")
-        sys.exit(0)
-
-    print('# model', model)
+    model = AD_SUP2_MODEL6(args).to(device)
 
     if args.classifier == 'rnn':
         test_dnn = False
     else:
         test_dnn = True
 
-    trainiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_train', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len, test_dnn=test_dnn)
-    valiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_val', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len, test_dnn=test_dnn)
-    testiter = AD_SUP2_RNN_ITERATOR2(tvt='sup_test', csv_path=args.csv_path, ids_path=args.ids_path, stat_path=args.stat_path, data_name=args.data_name, batch_size=args.batch_size, rnn_len=args.rnn_len, test_dnn=test_dnn)
+    trainiter = AD_SUP2_RNN_ITERATOR2(mode='train',
+                                      batch_size=args.batch_size,
+                                      rnn_len=args.rnn_len,
+                                      test_dnn=False,
+                                      label='False')
+    validiter = AD_SUP2_RNN_ITERATOR2(mode='valid',
+                                      batch_size=args.batch_size,
+                                      rnn_len=args.rnn_len,
+                                      test_dnn=False,
+                                      label='False')
+    testiter = AD_SUP2_RNN_ITERATOR2(mode='test',
+                                      batch_size=args.batch_size,
+                                      rnn_len=args.rnn_len,
+                                      test_dnn=False,
+                                      label='False')
 
     print('trainiter: {} samples'.format(len(trainiter)))
     print('validiter: {} samples'.format(len(valiter)))
@@ -155,6 +136,9 @@ def train_main(args, neptune):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
+    # task
+    parser.add_argument('--label', type=str)
+    # exp_name
     parser.add_argument('--exp_name', type=str)
     # dataset
     parser.add_argument('--dataset', type=str)
@@ -163,6 +147,7 @@ if __name__ == '__main__':
     parser.add_argument('--csv_path', type=str)
     parser.add_argument('--ids_path', type=str)
     parser.add_argument('--stat_path', type=str)
+    parser.add_argument('--dict_path', type=str)
     parser.add_argument('--data_name', type=str)
     # feature mapping
     parser.add_argument('--use_feature_mapping', type=int)
@@ -201,12 +186,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     params = vars(args)
 
-    neptune.init('cjlee/apnoms2021')
-    experiment = neptune.create_experiment(name=args.exp_name, params=params)
-    args.out_file = experiment.id + '.pth'
+    #neptune.init('cjlee/apnoms2021')
+    #experiment = neptune.create_experiment(name=args.exp_name, params=params)
+    #args.out_file = experiment.id + '.pth'
 
-    #neptune=None
-    #args.out_file = 'dummy.pth'
+    neptune=None
+    args.out_file = 'dummy.pth'
 
     print('parameters:')
     print('='*90)

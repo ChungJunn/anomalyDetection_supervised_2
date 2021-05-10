@@ -1,5 +1,8 @@
 #!/bin/bash
-EXP_NAME='210429.change_testset_ratio'
+EXP_NAME='210429.debug'
+
+# task
+LABEL='rcl'
 
 # dataset
 DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
@@ -9,6 +12,7 @@ RNN_LEN=16
 BASE_DIR=$HOME'/autoregressor/data/'
 CSV_PATH=$BASE_DIR'raw/'$DATASET'_data.csv'
 IDS_PATH=$BASE_DIR''$DATASET'_data/indices.rnn_len16.pkl'
+DICT_PATH=$BASE_DIR''$DATASET'_data/dict.pkl'
 STAT_PATH=$CSV_PATH'.stat'
 DATA_NAME=$DATASET'_data'
 
@@ -48,8 +52,8 @@ PATIENCE=20
 MAX_EPOCH=1000
 
 export CUDA_VISIBLE_DEVICES=$1
-for i in 1 2 3
-do
+#for i in 1 2 3
+#do
     /usr/bin/python3.8 ad_main.py \
                         --reduce=$REDUCE \
                         --optimizer=$OPTIMIZER \
@@ -80,5 +84,7 @@ do
                         --ids_path=$IDS_PATH \
                         --stat_path=$STAT_PATH \
                         --data_name=$DATA_NAME \
-                        --rnn_len=$RNN_LEN
-done
+                        --rnn_len=$RNN_LEN \
+                        --label=$LABEL \
+                        --dict_path=$DICT_PATH
+#done
