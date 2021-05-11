@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='210429.debug'
+EXP_NAME='210511.debug'
 
 # task
 LABEL='rcl'
@@ -42,7 +42,17 @@ CLF_N_LSTM_LAYERS=-1
 CLF_N_FC_LAYERS=3
 CLF_DIM_LSTM_HIDDEN=-1
 CLF_DIM_FC_HIDDEN=600
-CLF_DIM_OUTPUT=2
+
+if [ $LABEL == 'sla' ]
+then
+    CLF_DIM_OUTPUT=2
+elif [ $LABEL == 'rcl' ]
+then
+    CLF_DIM_OUTPUT=7
+else
+    echo '$LABEL must be either sla or rcl'
+    exit -1
+fi
 
 # training parameter
 OPTIMIZER='Adam'
@@ -88,3 +98,5 @@ export CUDA_VISIBLE_DEVICES=$1
                         --label=$LABEL \
                         --dict_path=$DICT_PATH
 #done
+
+exit 0

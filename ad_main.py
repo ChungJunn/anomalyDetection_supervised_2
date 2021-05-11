@@ -17,16 +17,25 @@ import time
 import argparse
 import neptune
 
-from ad_model import AD_SUP2_MODEL6
-from ad_model import AD_SUP2_MODEL7
+from ad_model import AD_SUP2_MODEL3, AD_SUP2_MODEL6
 from ad_data import AD_SUP2_RNN_ITERATOR2
 from ad_test import eval_main, test
+
+def call_model(args, device):
+    if args.encoder == 'transformer' and args.classifier == 'dnn':
+        model = AD_SUP2_MODEL3(args)
+    elif args.encoder == 'rnn' and args.classifier == 'rnn':
+        model = AD_SUP2_MODEL6(args)
+    
+    model = model.to(device)
+
+    return model
 
 def train_main(args, neptune):
     device = torch.device('cuda:0')
     criterion = F.nll_loss
-        
-    model = AD_SUP2_MODEL6(args).to(device)
+
+    model = call_model(args, device)
 
     if args.classifier == 'rnn':
         test_dnn = False
@@ -34,23 +43,38 @@ def train_main(args, neptune):
         test_dnn = True
 
     trainiter = AD_SUP2_RNN_ITERATOR2(mode='train',
+                                      csv_path=args.csv_path,
+                                      ids_path=args.ids_path,
+                                      stat_path=args.stat_path,
+                                      dict_path=args.dict_path,
+                                      data_name=args.data_name,
                                       batch_size=args.batch_size,
                                       rnn_len=args.rnn_len,
-                                      test_dnn=False,
-                                      label='False')
+                                      test_dnn=test_dnn,
+                                      label=args.label)
     validiter = AD_SUP2_RNN_ITERATOR2(mode='valid',
+                                      csv_path=args.csv_path,
+                                      ids_path=args.ids_path,
+                                      stat_path=args.stat_path,
+                                      dict_path=args.dict_path,
+                                      data_name=args.data_name,
                                       batch_size=args.batch_size,
                                       rnn_len=args.rnn_len,
-                                      test_dnn=False,
-                                      label='False')
+                                      test_dnn=test_dnn,
+                                      label=args.label)
     testiter = AD_SUP2_RNN_ITERATOR2(mode='test',
-                                      batch_size=args.batch_size,
-                                      rnn_len=args.rnn_len,
-                                      test_dnn=False,
-                                      label='False')
+                                     csv_path=args.csv_path,
+                                     ids_path=args.ids_path,
+                                     stat_path=args.stat_path,
+                                     dict_path=args.dict_path,
+                                     data_name=args.data_name,
+                                     batch_size=args.batch_size,
+                                     rnn_len=args.rnn_len,
+                                     test_dnn=test_dnn,
+                                     label=args.label)
 
     print('trainiter: {} samples'.format(len(trainiter)))
-    print('validiter: {} samples'.format(len(valiter)))
+    print('validiter: {} samples'.format(len(validiter)))
     print('testiter: {} samples'.format(len(testiter)))
 
     # declare optimizer
@@ -70,16 +94,16 @@ def train_main(args, neptune):
     clf_hidden = None
 
     for ei in range(args.max_epoch):
-        for li, (anno, label, end_of_data) in enumerate(trainiter):
-            anno = anno.to(dtype=torch.float32, device=device)
-            label = label.to(dtype=torch.int64, device=device)
+        for li, (x_data, y_data, end_of_data) in enumerate(trainiter):
+            x_data = x_data.to(dtype=torch.float32, device=device)
+            y_data = y_data.to(dtype=torch.int64, device=device)
 
             optimizer.zero_grad()
 
-            output = model(anno)
+            output = model(x_data)
 
             # go through loss function
-            loss = criterion(output, label)
+            loss = criterion(output, y_data)
             loss.backward()
 
             # optimizer
@@ -100,7 +124,7 @@ def train_main(args, neptune):
         if neptune is not None: neptune.log_metric('train loss2', ei, train_loss2)
         train_loss2 = 0.0
 
-        acc,prec,rec,f1=eval_main(model,valiter,device)
+        acc,prec,rec,f1=eval_main(model,validiter,device)
         print('epoch: {:d} | val_f1: {:.4f}'.format(ei+1, f1))
         if neptune is not None: neptune.log_metric('valid f1', ei, f1)
 

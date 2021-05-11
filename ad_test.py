@@ -30,6 +30,8 @@ def eval_main(model, validiter, device):
 
         if end_of_data == 1: break
 
+    import pdb; pdb.set_trace()
+
     # obtain results using metrics
     preds = np.vstack(preds)
     targets = np.vstack(targets)

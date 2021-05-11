@@ -271,19 +271,25 @@ class Transformer_encoder(nn.Module):
         return enc_out
 
 class DNN_classifier(nn.Module):
-    def __init__(self, dim_input):
+    def __init__(self, dim_input, n_fc_layers, dim_fc_hidden, dim_output):
         super(DNN_classifier, self).__init__()
-        self.fc1 = nn.Linear(dim_input, 600)
-        self.fc2 = nn.Linear(600, 600)
-        self.fc3 = nn.Linear(600, 600)
-        self.fc4 = nn.Linear(600, 2)
-        self.relu = nn.ReLU()
+        
+        fc_layers = []
+        if n_fc_layers < 0:
+            print('n_fc_layers must be non-negative')
+            sys.exit(-1)
+        elif n_fc_layers == 0:
+            fc_layers += [nn.Linear(dim_input, dim_output)]
+        else:
+            fc_layers += [nn.Linear(dim_input, dim_fc_hidden), nn.ReLU()]
+            for i in range(n_fc_layers-1):
+                fc_layers += [nn.Linear(dim_fc_hidden, dim_fc_hidden), nn.ReLU()]
+            fc_layers += [nn.Linear(dim_fc_hidden, dim_output)]
+        
+        self.fc = nn.Sequential(*fc_layers)
 
     def forward(self, x):
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        x = self.relu(self.fc3(x))
-        x = self.fc4(x)
+        x = self.fc(x)
 
         return F.log_softmax(x, dim=1)
 
@@ -314,125 +320,23 @@ class RNN_classifier(nn.Module):
 
         return F.log_softmax(x, dim=2), hidden
 
-class AD_SUP2_MODEL1(nn.Module):
-    def __init__(self, dim_input, reduce):
-        super(AD_SUP2_MODEL1, self).__init__()
-
-        self.classifier = DNN_classifier(dim_input=dim_input)
-        self.reduce = reduce # either 'mean' or 'max'
-
-        # attention paramters
-        if self.reduce == 'self-attention':
-            dim_att_in = dim_input
-            self.dim_att = dim_input
-            self.att1 = nn.Linear(dim_att_in, self.dim_att)
-            self.att2 = nn.Linear(self.dim_att, 1)
-
-    def encoder(self, annotation):
-        if self.reduce == 'max':
-            enc_out, _ = torch.max(annotation, dim=0, keepdim=True)
-        elif self.reduce == 'mean':
-            enc_out = torch.mean(annotation, dim=0, keepdim=True)
-        elif self.reduce == 'self-attention':
-            ctx = annotation
-            Tx, Bn, D = ctx.size()
-            att1 = torch.tanh(self.att1(ctx))
-            att2 = self.att2(att1).view(Tx, Bn)
-
-            alpha = att2 - torch.max(att2)
-            alpha = torch.exp(alpha)
-
-            alpha = alpha / (torch.sum(alpha, dim=0, keepdim=True) + 1e-15)
-            enc_out = torch.sum(alpha.unsqueeze(2) * ctx, dim=0)
-        else:
-            print('reduce must be either \'max\' or \'mean\'')
-            import sys; sys.exit(-1)
-
-        return enc_out
-
-    def forward(self, annotation):
-        annotation=torch.transpose(annotation,0,1).contiguous()
-
-        encoded = self.encoder(annotation)
-        encoded=encoded.squeeze(0)
-
-        logits = self.classifier(encoded)
-
-        return logits
-
-class AD_SUP2_MODEL2(nn.Module):
-    def __init__(self, args):
-        super(AD_SUP2_MODEL2, self).__init__()
-
-        if args.bidirectional==1:
-            clf_dim_input = args.dim_lstm_hidden * 2
-        else:
-            clf_dim_input = args.dim_lstm_hidden
-
-        self.encoder=RNN_encoder(dim_input = args.dim_input,
-                                 dim_lstm_hidden = args.dim_lstm_hidden,
-                                 reduce= args.reduce,
-                                 bidirectional = args.bidirectional,
-                                 use_feature_mapping = args.use_feature_mapping,
-                                 dim_feature_mapping = args.dim_feature_mapping,
-                                 nlayer = args.nlayer,
-                                 dim_att = args.dim_att)
-
-        self.classifier=DNN_classifier(dim_input=clf_dim_input)
-
-    def forward(self, x):
-        x = self.encoder(x)
-
-        logits = self.classifier(x)
-
-        return logits
-
 class AD_SUP2_MODEL3(nn.Module):
-    def __init__(self, dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer):
+    def __init__(self, args):
         super(AD_SUP2_MODEL3, self).__init__()
-        if use_feature_mapping:
-            d_model = dim_feature_mapping
+        if args.use_feature_mapping:
+            d_model = args.dim_feature_mapping
         else:
-            d_model = dim_input
+            d_model = args.dim_input
 
-        self.encoder=Transformer_encoder(dim_input, nhead, dim_feedforward, reduce, use_feature_mapping, dim_feature_mapping, nlayer)
-        self.classifier=DNN_classifier(dim_input=d_model)
-
-    def forward(self, x):
-        x = self.encoder(x)
-        logits = self.classifier(x)
-
-        return logits
-
-class AD_SUP2_MODEL4(nn.Module): # DNN-enc + DNN-classifier
-    def __init__(self, dim_input, dim_enc, reduce):
-        super(AD_SUP2_MODEL4, self).__init__()
-
-        self.encoder=DNN_encoder(dim_input, dim_enc, reduce)
-        self.classifier=DNN_classifier(dim_input=dim_enc)
+        self.encoder=Transformer_encoder(args.dim_input, args.nhead, args.dim_feedforward, args.reduce, args.use_feature_mapping, args.dim_feature_mapping, args.nlayer)
+        self.classifier=DNN_classifier(dim_input=d_model,
+                                       n_fc_layers=args.clf_n_fc_layers,
+                                       dim_fc_hidden=args.clf_dim_fc_hidden,
+                                       dim_output=args.clf_dim_output)
 
     def forward(self, x):
         x = self.encoder(x)
         logits = self.classifier(x)
-
-        return logits
-
-class AD_SUP2_MODEL5(nn.Module): # DNN-enc + RNN-classifier
-    def __init__(self, dim_input, dim_enc, reduce, clf_n_lstm_layers, clf_n_fc_layers, clf_dim_lstm_hidden, clf_dim_fc_hidden, clf_dim_output):
-        super(AD_SUP2_MODEL5, self).__init__()
-
-        dim_classifier_input = dim_enc
-
-        self.encoder=DNN_encoder(dim_input, dim_enc, reduce)
-        self.classifier=RNN_classifier(dim_input=dim_classifier_input, n_lstm_layers=clf_n_lstm_layers, n_fc_layers=clf_n_fc_layers, dim_lstm_hidden=clf_dim_lstm_hidden, dim_fc_hidden=clf_dim_fc_hidden, dim_output=clf_dim_output)
-
-    def forward(self, x):
-        x = self.encoder(x)
-
-        x = x.unsqueeze(1)
-
-        logits, _ = self.classifier(x)
-        logits = logits[-1,:,:]
 
         return logits
 
@@ -574,7 +478,7 @@ class AD_SUP2_MODEL7(nn.Module): # RNN-enc + RNN classifier + attention w/ clf_h
 
         return log_prob
 
-class AD_SUP2_MODEL8(nn.Module): # RNN-enc + RNN classifier + attention w/ clf_hidden
+class AD_SUP2_MODEL8(nn.Module): # Transformer-enc + RNN classifier + attention w/ clf_hidden
     def __init__(self, args, device):
         super(AD_SUP2_MODEL8, self).__init__()
         self.device = device

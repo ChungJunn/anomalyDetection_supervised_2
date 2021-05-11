@@ -5,7 +5,7 @@ import torch
 import sys
 
 class AD_SUP2_RNN_ITERATOR2:
-    def __init__(self, tvt, csv_path, ids_path, stat_path, dict_path, data_name, batch_size, rnn_len, test_dnn, label):
+    def __init__(self, mode, csv_path, ids_path, stat_path, dict_path, data_name, batch_size, rnn_len, test_dnn, label):
         # load csv, ids
         df_data = pd.read_csv(csv_path)
         np_data = np.array(df_data)
@@ -15,34 +15,35 @@ class AD_SUP2_RNN_ITERATOR2:
             label_i = -3
             self.label = np_data[:,label_i]
 
+        # label encoding
         elif label == 'rcl':
             label_i = -1
             self.label = np_data[:,label_i]
 
-            # import dictionary
+            # import dict
             with open(dict_path, 'rb') as fp:
                 d = pkl.load(fp)
             class2idx = d['class2idx']
 
-            # transform the labels to integers
+            # encode
             for n in range(len(self.label)):
                 self.label[n] = class2idx[self.label[n]]
             self.label = self.label.astype(np.int64)
         else:
             print('label must be either sla or rcl')
             sys.exit(0)
-        
+
         with open(ids_path, 'rb') as fp:
             ids = pkl.load(fp)
-        if tvt == 'sup_train':
+        if mode == 'train':
             self.ids = ids['train']
-        if tvt == 'sup_val':
+        if mode == 'valid':
             self.ids = ids['valid']
-        if tvt == 'sup_test':
+        if mode == 'test':
             self.ids = ids['test']
 
         # normalize
-        if tvt == 'sup_train':
+        if mode == 'train':
             self.x_avg = np.mean(self.data, axis=0)
             self.x_std = np.std(self.data, axis=0)
 
@@ -98,11 +99,11 @@ class AD_SUP2_RNN_ITERATOR2:
 
         ## replace with add tvt to the dataset paths
         self.input = np.stack(datas)
-        self.input = self.input.transpose(1,0,2)
+        self.input = self.input.transpose(1,0,2) # (Bn x V x D)
 
         self.ids_i = 0
         self.n_samples = self.input.shape[0]
-        self.rnn_len = rnn_len 
+        self.rnn_len = rnn_len
         self.batch_size = batch_size
         self.n_ids = len(self.ids)
         self.test_dnn = test_dnn
@@ -118,8 +119,8 @@ class AD_SUP2_RNN_ITERATOR2:
         return self.n_ids
 
     def __next__(self):
-        x_data = np.zeros((self.batch_size, self.rnn_len, self.n_nodes, self.n_features)) # T B E
-        y_data = np.zeros((self.batch_size)) # T B E
+        x_data = np.zeros((self.batch_size, self.rnn_len, self.n_nodes, self.n_features))
+        y_data = np.zeros((self.batch_size))
         end_of_data = 0
 
         b_len = 0
@@ -139,7 +140,7 @@ class AD_SUP2_RNN_ITERATOR2:
             y_data[i] = self.label[idx] 
             b_len += 1
 
-        x_data = x_data[:b_len,:,:,:]
+        x_data = x_data[:b_len,:,:,:] # (Bn x Tx x V x D)
         y_data = y_data[:b_len]
 
         self.ids_i += b_len
@@ -147,7 +148,7 @@ class AD_SUP2_RNN_ITERATOR2:
         x_data, y_data = torch.tensor(x_data).type(torch.float32), torch.tensor(y_data).type(torch.int32)
 
         if self.test_dnn == True:
-            x_data = x_data[:,-1,:,:]
+            x_data = x_data[:,-1,:,:] # (Bn x V x D)
 
         return x_data, y_data, end_of_data
 
