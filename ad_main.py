@@ -19,7 +19,9 @@ import neptune
 
 from ad_model import AD_SUP2_MODEL3, AD_SUP2_MODEL6
 from ad_data import AD_SUP2_RNN_ITERATOR2
-from ad_test import eval_main, test
+from ad_test import eval_forward, eval_binary, get_valid_loss, log_neptune
+
+from sklearn.metrics import classification_report
 
 def call_model(args, device):
     if args.encoder == 'transformer' and args.classifier == 'dnn':
@@ -88,10 +90,11 @@ def train_main(args, neptune):
     log_interval=1000
     log_idx=0
     bc = 0
-    best_val_f1 = None
+    best_valid_loss = None
     savedir = './result/' + args.out_file
-    n_samples = trainiter.n_samples
-    clf_hidden = None
+    if args.label == 'rcl':
+        with open(args.dict_path, 'rb') as fp:
+            idx2class = (pkl.load(fp))['idx2class']
 
     for ei in range(args.max_epoch):
         for li, (x_data, y_data, end_of_data) in enumerate(trainiter):
@@ -113,25 +116,25 @@ def train_main(args, neptune):
 
             if end_of_data == 1: break
 
-            if (log_idx % log_interval) == (log_interval - 1):
+            if (args.batch_size == 1) and (log_idx % log_interval) == (log_interval - 1):
                 print('{:d} | {:d} | {:.4f}'.format(ei+1, log_idx+1, train_loss1/log_interval))
                 if neptune is not None: neptune.log_metric('train loss (n_samples)', log_idx+1, train_loss1/log_interval)
                 train_loss1 = 0.0
             log_idx += 1
 
-        train_loss2 = train_loss2 / li
+        train_loss2 = train_loss2 / (li + 1)
         print('epoch: {:d} | train_loss: {:.4f}'.format(ei+1, train_loss2))
-        if neptune is not None: neptune.log_metric('train loss2', ei, train_loss2)
+        if neptune is not None: neptune.log_metric('train_loss2', ei+1, train_loss2)
         train_loss2 = 0.0
 
-        acc,prec,rec,f1=eval_main(model,validiter,device)
-        print('epoch: {:d} | val_f1: {:.4f}'.format(ei+1, f1))
-        if neptune is not None: neptune.log_metric('valid f1', ei, f1)
+        valid_loss = get_valid_loss(model, validiter, device)
+        print('epoch: {:d} | valid_loss: {:.4f}'.format(ei+1, valid_loss))
+        if neptune is not None: neptune.log_metric('valid_loss', ei+1, valid_loss)
 
-        if ei == 0 or f1 > best_val_f1:
+        if ei == 0 or valid_loss < best_valid_loss:
             torch.save(model, savedir)
             bc = 0
-            best_val_f1=f1
+            best_valid_loss = valid_loss
             print('found new best model')
         else:
             bc += 1
@@ -142,18 +145,33 @@ def train_main(args, neptune):
 
     model = torch.load(savedir)
     
-    datasets = ['cnsm_exp1', 'cnsm_exp2_1', 'cnsm_exp2_2']
-    for dset in datasets:
-        acc, prec, rec, f1 = test(model, dset, args.batch_size, args.rnn_len, test_dnn, device)
+    # evaluation
+    eval_modes = ['valid', 'test']
+    for eval_mode in eval_modes:
+        dataiter = eval(eval_mode + 'iter')
+        targets, preds = eval_forward(model, dataiter, device)
 
-        print('{} | acc: {:.4f} | prec: {:.4f} | rec: {:.4f} | f1: {:.4f}'
-              .format(dset, acc, prec, rec, f1))
+        # for binary class
+        if args.label == 'sla':
+            # metric
+            acc, prec, rec, f1 = eval_binary(targets, preds)
 
-        if neptune is not None:
-            neptune.set_property(dset+'_acc', acc)
-            neptune.set_property(dset+'_prec', prec)
-            neptune.set_property(dset+'_rec', rec)
-            neptune.set_property(dset+'_f1', f1)
+            # std and neptune
+            print('{} | acc: {:.4f} | prec: {:.4f} | rec: {:.4f} | f1: {:.4f} |'.format(eval_mode, acc, prec, rec, f1))
+            if neptune is not None:
+                neptune.set_property(eval_mode + ' acc', acc)
+                neptune.set_property(eval_mode + ' prec', prec)
+                neptune.set_property(eval_mode + ' rec', rec)
+                neptune.set_property(eval_mode + ' f1', f1)
+
+        # for multi-class
+        elif args.label == 'rcl':
+            result_dict = classification_report(targets, preds, target_names=idx2class, output_dict=True)
+
+            # std and neptune
+            print(eval_mode, result_dict)
+            if neptune is not None:
+                log_neptune(result_dict, eval_mode, neptune)
 
     return
 
@@ -162,6 +180,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # task
     parser.add_argument('--label', type=str)
+    parser.add_argument('--use_neptune', type=int)
     # exp_name
     parser.add_argument('--exp_name', type=str)
     # dataset
@@ -210,12 +229,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
     params = vars(args)
 
-    #neptune.init('cjlee/apnoms2021')
-    #experiment = neptune.create_experiment(name=args.exp_name, params=params)
-    #args.out_file = experiment.id + '.pth'
-
-    neptune=None
-    args.out_file = 'dummy.pth'
+    if args.use_neptune == 1:
+        neptune.init('cjlee/apnoms2021')
+        experiment = neptune.create_experiment(name=args.exp_name, params=params)
+        args.out_file = experiment.id + '.pth'
+    else:
+        neptune=None
+        args.out_file = 'dummy.pth'
 
     print('parameters:')
     print('='*90)

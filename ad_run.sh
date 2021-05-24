@@ -3,6 +3,7 @@ EXP_NAME='210511.debug'
 
 # task
 LABEL='rcl'
+USE_NEPTUNE=1
 
 # dataset
 DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
@@ -62,8 +63,8 @@ PATIENCE=20
 MAX_EPOCH=1000
 
 export CUDA_VISIBLE_DEVICES=$1
-#for i in 1 2 3
-#do
+for i in 1 2 3 4 5
+do
     /usr/bin/python3.8 ad_main.py \
                         --reduce=$REDUCE \
                         --optimizer=$OPTIMIZER \
@@ -96,7 +97,8 @@ export CUDA_VISIBLE_DEVICES=$1
                         --data_name=$DATA_NAME \
                         --rnn_len=$RNN_LEN \
                         --label=$LABEL \
-                        --dict_path=$DICT_PATH
-#done
+                        --dict_path=$DICT_PATH \
+                        --use_neptune=$USE_NEPTUNE
+done
 
 exit 0
