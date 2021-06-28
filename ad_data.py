@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import pickle as pkl
 import torch
+from torch.utils.data import Dataset
 import sys
 
 class AD_SUP2_RNN_ITERATOR2:
@@ -14,7 +15,6 @@ class AD_SUP2_RNN_ITERATOR2:
         if label == 'sla':
             label_i = -3
             self.label = np_data[:,label_i]
-
         # label encoding
         elif label == 'rcl':
             label_i = -1
@@ -152,203 +152,114 @@ class AD_SUP2_RNN_ITERATOR2:
 
         return x_data, y_data, end_of_data
 
-class AD_SUP2_RNN_ITERATOR:
-    def __init__(self, tvt, data_dir, pkl_files, batch_size):
-        ## replace with add tvt to the dataset paths
-        pkl_paths=[]
+class TPI_RNN_Dataset(Dataset):
+    def __init__(self, mode, csv_path, ids_path, stat_path, data_name, rnn_len, test_dnn):
+         # load csv, ids
+        df_data = pd.read_csv(csv_path)
+        np_data = np.array(df_data)
+        self.data = np_data[:,:-3].astype(np.float32)
 
-        for n in range(len(pkl_files)):
-            pkl_path=data_dir+tvt+'.'+pkl_files[n]
-            pkl_paths.append(pkl_path)
+        # assume sla label
+        label_i = -3
+        self.label = np_data[:,label_i].astype(np.int64)
 
-        # iter for n_nodes
-        self.node_features=[]
-        for n in range(len(pkl_paths)-1):
-            with open(pkl_paths[n], 'rb') as fp:
-                node_data = pkl.load(fp)
-                self.node_features.append(node_data)
-        with open(pkl_paths[-1], 'rb') as fp:
-            self.label= pkl.load(fp)
-
-        self.input = np.stack(self.node_features)
-        self.input = self.input.transpose(1,2,0,3)
-
-        self.idx = 0
-        self.n_samples = self.input.shape[0]
-        self.n_node_features = self.input.shape[-1]
-        self.n_nodes = len(pkl_paths) - 1
-        self.rnn_len = self.input.shape[1]
-
-    def reset(self):
-        self.idx=0
-        return
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        x_data = np.zeros((self.rnn_len, self.n_nodes, self.n_node_features))
-        y_data = np.zeros((1,))
-        end_of_data = 0
-
-        x_data[:,:,:] = self.input[self.idx]
-        y_data[:] = self.label[self.idx]
-        self.idx+=1
-
-        if self.idx >= (self.n_samples-1):
-            end_of_data = 1
-            self.reset()
-
-        x_data = torch.tensor(x_data).type(torch.float32)
-        y_data = torch.tensor(y_data).type(torch.int64)
-
-        return x_data, y_data, end_of_data
-
-class AD_SUP2_DNN_ITERATOR:
-    def __init__(self, tvt, data_dir, pkl_files, batch_size):
-        ## replace with add tvt to the dataset paths
-        pkl_paths=[]
-
-        for n in range(len(pkl_files)):
-            pkl_path=data_dir+tvt+'.'+pkl_files[n]
-            pkl_paths.append(pkl_path)
-
-        # iter for n_nodes
-        self.node_features=[]
-        self.n_nodes = len(pkl_paths) - 1
-
-        for n in range(len(pkl_paths)-1):
-            with open(pkl_paths[n], 'rb') as fp:
-                node_data = pkl.load(fp)
-                self.node_features.append(node_data)
-
-        with open(pkl_paths[-1], 'rb') as fp:
-            self.label= pkl.load(fp)
-
-        self.input = np.stack(self.node_features)
-        self.input = self.input.transpose(1,2,0,3)
-        self.input = self.input[:,-1,:,:]
-        # node x bsz x seq_len x data_dim
-        
-        '''
-        if self.n_nodes == 4:
-            self.input = np.concatenate((self.input[:,0,:],self.input[:,1,:],self.input[:,2,:],self.input[:,3,:]), axis=1)
-        elif self.n_nodes == 5:
-            self.input = np.concatenate((self.input[:,0,:],self.input[:,1,:],self.input[:,2,:],self.input[:,3,:], self.input[:,4,:]), axis=1)
+        if mode == 'plot':
+            self.ids = list(range((rnn_len-1), len(self.data)))
         else:
-            print('node number must be either 4 or 5')
-        '''
+            with open(ids_path, 'rb') as fp:
+                ids = pkl.load(fp)
+            if mode == 'train':
+                self.ids = ids['train']
+            elif mode == 'valid':
+                self.ids = ids['valid']
+            elif mode == 'test':
+                self.ids = ids['test']
+            else:
+                print('mode must be either train, valid, or test')
 
-        # prepare some properties
-        self.idx = 0
-        self.n_samples = self.input.shape[0]
-        self.n_node_features = self.input.shape[-1]
-        self.batch_size = batch_size
+        # normalize
+        if mode == 'train':
+            self.x_avg = np.mean(self.data, axis=0)
+            self.x_std = np.std(self.data, axis=0)
 
-    def reset(self):
-        self.idx=0
-        return
+            for i in range(len(self.x_std)):
+                if self.x_std[i] == 0:
+                    self.x_std[i] = 0.001
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        x_data = np.zeros((self.batch_size, self.n_nodes, self.n_node_features)) # T B E
-        y_data = np.zeros((self.batch_size,))
-        end_of_data = 0
-
-        if self.idx >= self.n_samples:
-            self.reset()
-            end_of_data=1
-
-        b_len = 0
-        for i in range(self.batch_size):
-            if self.idx+i >= self.n_samples:
-                break
-
-            x_data[i,:,:] = self.input[self.idx+i,:,:]
-            y_data[i] = self.label[self.idx+i]
-            b_len += 1
-
-        x_data = x_data[:b_len]
-        y_data = y_data[:b_len]
-        self.idx += self.batch_size
-
-        x_data, y_data = torch.tensor(x_data).type(torch.float32), torch.tensor(y_data).type(torch.int32)
-        return x_data, y_data, end_of_data # B E
-
-# create annotation and adjacency matrices and dataloader
-class AD_SUP2_ITERATOR:
-    def __init__(self, tvt, data_dir, csv_files, batch_size):
-        ## replace with add tvt to the dataset paths
-        csv_paths=[]
-
-        for n in range(len(csv_files)):
-            csv_path=data_dir+tvt+'.'+csv_files[n]
-            csv_paths.append(csv_path)
-
-        from sklearn.preprocessing import StandardScaler
-        scaler = StandardScaler()
-
-        # iteration for n_nodes
-        self.node_features=[]
-        for n in range(len(csv_paths)-1):
-            pp_data = scaler.fit_transform(np.array(pd.read_csv(csv_paths[n])))
-            self.node_features.append(pp_data)
-        self.label = np.array(pd.read_csv(csv_paths[-1]))
-
-        self.idx = 0
-        self.batch_size=batch_size
-        self.n_samples = self.node_features[0].shape[0]
-        self.n_node_features = self.node_features[0].shape[1]
-
-        # initialize the variables
-        self.n_nodes = len(self.node_features)
-    
-    def get_status(self):
-        print(self.idx, self.batch_size, self.n_samples, self.n_node_features)
-
-    def make_annotation_matrix(self, idx):
-        # initialize the matrix
-        annotation = np.zeros([self.n_nodes, self.n_node_features])
-
-        # retrieve the related data using idx
-        for ni in range(self.n_nodes):
-            for fi in range(self.n_node_features):
-                annotation[ni,fi] = (self.node_features[ni])[idx, fi]
-
-        return annotation
-
-    def reset(self):
-        self.idx = 0
-        return
-
-    def __next__(self):
-        x_data = np.zeros((self.batch_size, self.n_nodes, self.n_node_features))
-        y_data = np.zeros((self.batch_size,))
-        end_of_data=0
-
-        # b_size
-        del_i=0
-        for bi in range(self.batch_size):
-            if self.idx+bi >= (self.n_samples - 1):
-                end_of_data=1
-                self.reset()
-                del_i=0
-
-            x_data[bi, :, :] = self.make_annotation_matrix(self.idx+bi)
-            y_data[bi] = self.label[self.idx+bi]
-            del_i+=1
-
-        self.idx += del_i
-
-        x_data = torch.tensor(x_data).type(torch.float32)
-        y_data = torch.tensor(y_data).type(torch.int64)
+            fp = open(stat_path, 'w')
+            for i in range(self.x_avg.shape[0]):
+                if i > 0:
+                    fp.write(', ')
+                fp.write('%.9f' % (self.x_avg[i]))
+            fp.write('\n')
+            for i in range(self.x_std.shape[0]):
+                if i > 0:
+                    fp.write(', ')
+                fp.write('%.9f' % (self.x_std[i]))
+            fp.write('\n')
+            fp.close()
+        else:
+            fp = open(stat_path, 'r')
+            lines = fp.readlines()
+            self.x_avg= np.asarray([float(s) for s in lines[0].split(',')])
+            self.x_std= np.asarray([float(s) for s in lines[1].split(',')])
+            fp.close()
         
-        return x_data, y_data, end_of_data
+        self.data -= np.expand_dims(self.x_avg, axis=0)
+        self.data /= np.expand_dims(self.x_std, axis=0)
+        
+        # split to nodes
+        if data_name == 'cnsm_exp1_data':
+            vnfs = ['fw', 'ids', 'flowmon', 'dpi', 'lb']
+            self.n_nodes = 5
+            self.n_features = 23
+        elif data_name == 'cnsm_exp2_1_data' or data_name == 'cnsm_exp2_2_data':
+            vnfs = ['fw', 'flowmon', 'dpi', 'ids']
+            self.n_nodes = 4
+            self.n_features = 23
+        elif data_name == "tpi_train_data":
+            vnfs = ['fw', 'flowmon', 'dpi', 'ids', 'lb']
+            self.n_nodes = 5
+            self.n_features = 6
+        else:
+            print('data_name must be cnsm_exp1_data, cnsm_exp2_1_data, cnsm_exp2_2_data, or tpi_train_data')
+            import sys; sys.exit(-1)
 
-    def __iter__(self):
-        return self
+        # prepare lists
+        label_col = "SLA_Label"
+        datas = []
+        headers = []
+
+        for i in range(self.n_nodes):
+            start, end = (i * self.n_features), ((i+1) * self.n_features)
+            vnf_data = self.data[:, start:end]
+            datas.append(np.copy(vnf_data))
+
+        ## replace with add tvt to the dataset paths
+        self.input = np.stack(datas).astype(np.float32)
+        self.input = self.input.transpose(1,0,2) # (Bn x V x D)
+
+        self.ids_i = 0
+        self.n_samples = self.input.shape[0]
+        self.rnn_len = rnn_len
+        self.n_ids = len(self.ids)
+        self.test_dnn = test_dnn
+
+    def __len__(self):
+        return self.n_ids
+
+    def __getitem__(self, idx):
+        idx = self.ids[idx]
+
+        # get segment and label
+        data_range = range((idx-self.rnn_len+1),(idx+1))
+        x_data = self.input[data_range,:,:]
+        y_data = self.label[idx]
+
+        if self.test_dnn == True:
+            x_data = x_data[-1,:,:] # (Bn x V x D)
+
+        return x_data, y_data
 
 if __name__ == '__main__':
     import argparse

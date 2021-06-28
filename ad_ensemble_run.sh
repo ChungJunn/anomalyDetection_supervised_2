@@ -1,23 +1,12 @@
 #!/bin/bash
-EXP_NAME='210701.ni_meeting'
+EXP_NAME="210619_rnn_clf_ensemble"
 
 # task
 LABEL='sla'
-USE_NEPTUNE=1
 
 # dataset
-DATASET=$2 #cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
-
-if [ $DATASET == 'cnsm_exp1' ] || [ $DATASET == 'cnsm_exp2_1' ] || [ $DATASET == 'cnsm_exp2_2' ]
-then
-    DIM_INPUT=23
-elif [ $DATASET == 'tpi_train' ]
-then
-    DIM_INPUT=6
-else
-    echo '$DATASET must be either cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
-    exit -1
-fi
+DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DIM_INPUT=23
 RNN_LEN=16
 
 ## dataset
@@ -29,24 +18,23 @@ STAT_PATH=$CSV_PATH'.stat'
 DATA_NAME=$DATASET'_data'
 
 # fm
-USE_FEATURE_MAPPING=1
 DIM_FEATURE_MAPPING=24
 
 # enc
-ENCODER='transformer'
+ENCODER='rnn'
 NLAYER=2
 ## DNN-enc
 DIM_ENC=-1
 ## RNN-enc
-BIDIRECTIONAL=-1
+BIDIRECTIONAL=1
 DIM_LSTM_HIDDEN=20
 ## transformer-enc
-NHEAD=4
-DIM_FEEDFORWARD=48
+NHEAD=-1
+DIM_FEEDFORWARD=-1
 
 # readout
-REDUCE=$3 # mean, max, or self-attention
-DIM_ATT=40
+REDUCE='mean' # mean, max, or self-attention
+DIM_ATT=-1
 
 # clf
 CLASSIFIER='rnn' # dnn or rnn
@@ -59,7 +47,7 @@ if [ $LABEL == 'sla' ]
 then
     CLF_DIM_OUTPUT=2
 else
-    echo '$LABEL must be either sla'
+    echo '$LABEL must be sla'
     exit -1
 fi
 
@@ -69,26 +57,18 @@ LR=0.001
 DROP_P=0.0
 BATCH_SIZE=64
 PATIENCE=10
-MAX_EPOCH=1000
 
-USE_SCHEDULER=0
-STEP_SIZE=1
-GAMMA=0.5
-N_DECAY=3
+# ensemble parameters
+N_ESTIMATORS=$3
 
-export NEPTUNE_API_TOKEN="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJjZDBmMTBmOS0zZDJjLTRkM2MtOTA0MC03YmQ5OThlZTc5N2YifQ=="
 export CUDA_VISIBLE_DEVICES=$1
-
-for i in 1 2 3
-do
-    /usr/bin/python3.8 ad_main.py \
+    /usr/bin/python3.8 ad_ensemble_train.py \
                         --reduce=$REDUCE \
                         --optimizer=$OPTIMIZER \
                         --lr=$LR \
                         --patience=$PATIENCE \
                         --exp_name=$EXP_NAME \
                         --dataset=$DATASET \
-                        --max_epoch=$MAX_EPOCH \
                         --batch_size=$BATCH_SIZE \
                         --dim_lstm_hidden=$DIM_LSTM_HIDDEN \
                         --dim_feature_mapping=$DIM_FEATURE_MAPPING \
@@ -113,12 +93,7 @@ do
                         --rnn_len=$RNN_LEN \
                         --label=$LABEL \
                         --dict_path=$DICT_PATH \
-                        --use_neptune=$USE_NEPTUNE \
-                        --use_scheduler=$USE_SCHEDULER \
-                        --step_size=$STEP_SIZE \
-                        --gamma=$GAMMA \
-                        --n_decay=$N_DECAY \
+                        --n_estimators=$N_ESTIMATORS \
                         --drop_p=$DROP_P
-done
-
+                        
 exit 0

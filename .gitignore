@@ -21,3 +21,5 @@ ray_result_bkup/*
 temp*
 *.swo
 libs/__pycache__/*
+210701*.sh
+EnsemblePytorch/*

@@ -13,29 +13,29 @@ import pickle as pkl
 import math
 import sys
 import time
+import os
 
 import argparse
 import neptune
 
-from ad_model import AD_SUP2_MODEL3, AD_SUP2_MODEL6
-from ad_data import AD_SUP2_RNN_ITERATOR2
+from ad_model import RNN_enc_RNN_clf, Transformer_enc_RNN_clf
+from ad_data import AD_SUP2_RNN_ITERATOR2, TPI_RNN_Dataset
 from ad_test import eval_forward, eval_binary, get_valid_loss, log_neptune
 
 from sklearn.metrics import classification_report
 
 def call_model(args, device):
-    if args.encoder == 'transformer' and args.classifier == 'dnn':
-        model = AD_SUP2_MODEL3(args)
-    elif args.encoder == 'rnn' and args.classifier == 'rnn':
-        model = AD_SUP2_MODEL6(args)
-    
+    if args.encoder == 'rnn' and args.classifier == 'rnn':
+        model = RNN_enc_RNN_clf(args)
+    elif args.encoder == 'transformer' and args.classifier == 'rnn':
+        model = Transformer_enc_RNN_clf(args)
+
     model = model.to(device)
 
     return model
 
 def train_main(args, neptune):
-    device = torch.device('cuda:0')
-    criterion = F.nll_loss
+    device = torch.device('cuda')
 
     model = call_model(args, device)
 
@@ -44,52 +44,81 @@ def train_main(args, neptune):
     else:
         test_dnn = True
 
-    trainiter = AD_SUP2_RNN_ITERATOR2(mode='train',
-                                      csv_path=args.csv_path,
-                                      ids_path=args.ids_path,
-                                      stat_path=args.stat_path,
-                                      dict_path=args.dict_path,
-                                      data_name=args.data_name,
-                                      batch_size=args.batch_size,
-                                      rnn_len=args.rnn_len,
-                                      test_dnn=test_dnn,
-                                      label=args.label)
-    validiter = AD_SUP2_RNN_ITERATOR2(mode='valid',
-                                      csv_path=args.csv_path,
-                                      ids_path=args.ids_path,
-                                      stat_path=args.stat_path,
-                                      dict_path=args.dict_path,
-                                      data_name=args.data_name,
-                                      batch_size=args.batch_size,
-                                      rnn_len=args.rnn_len,
-                                      test_dnn=test_dnn,
-                                      label=args.label)
-    testiter = AD_SUP2_RNN_ITERATOR2(mode='test',
-                                     csv_path=args.csv_path,
-                                     ids_path=args.ids_path,
-                                     stat_path=args.stat_path,
-                                     dict_path=args.dict_path,
-                                     data_name=args.data_name,
-                                     batch_size=args.batch_size,
-                                     rnn_len=args.rnn_len,
-                                     test_dnn=test_dnn,
-                                     label=args.label)
+    if args.dataset == "cnsm_exp1" or args.dataset == "cnsm_exp2_1" or args.dataset == "cnsm_exp2_2":
+        train = TPI_RNN_Dataset(mode="train",
+                                csv_path=args.csv_path,
+                                ids_path=args.ids_path,
+                                stat_path=args.stat_path,
+                                data_name=args.data_name,
+                                rnn_len=args.rnn_len,
+                                test_dnn=test_dnn)
+        valid = TPI_RNN_Dataset(mode="valid",
+                                csv_path=args.csv_path,
+                                ids_path=args.ids_path,
+                                stat_path=args.stat_path,
+                                data_name=args.data_name,
+                                rnn_len=args.rnn_len,
+                                test_dnn=test_dnn)
+        test = TPI_RNN_Dataset(mode="test",
+                                csv_path=args.csv_path,
+                                ids_path=args.ids_path,
+                                stat_path=args.stat_path,
+                                data_name=args.data_name,
+                                rnn_len=args.rnn_len,
+                                test_dnn=test_dnn)
 
-    print('trainiter: {} samples'.format(len(trainiter)))
-    print('validiter: {} samples'.format(len(validiter)))
-    print('testiter: {} samples'.format(len(testiter)))
+    elif args.dataset == "tpi_train":
+        HOME = os.environ["HOME"]
+        test_csv_path = HOME + "/autoregressor/data/raw/tpi_test_data.csv"
+        test_stat_path = HOME + "/autoregressor/data/raw/tpi_train_data.csv.stat"
+        
+        train = TPI_RNN_Dataset(mode="train",
+                                csv_path=args.csv_path,
+                                ids_path=args.ids_path,
+                                stat_path=args.stat_path,
+                                data_name=args.data_name,
+                                rnn_len=args.rnn_len,
+                                test_dnn=test_dnn)
+        valid = TPI_RNN_Dataset(mode="valid",
+                                csv_path=args.csv_path,
+                                ids_path=args.ids_path,
+                                stat_path=args.stat_path,
+                                data_name=args.data_name,
+                                rnn_len=args.rnn_len,
+                                test_dnn=test_dnn)
+        test = TPI_RNN_Dataset(mode="plot",
+                                csv_path=test_csv_path,
+                                ids_path=None,
+                                stat_path=test_stat_path,
+                                data_name=args.data_name,
+                                rnn_len=args.rnn_len,
+                                test_dnn=test_dnn)
+
+    device = torch.device('cuda')
+
+    criterion = torch.nn.CrossEntropyLoss()
+
+    trainiter = torch.utils.data.DataLoader(train, batch_size=args.batch_size, shuffle=True)
+    validiter = torch.utils.data.DataLoader(valid, batch_size=args.batch_size, shuffle=True)
+    testiter = torch.utils.data.DataLoader(test, batch_size=args.batch_size, shuffle=True)
+
+    print('trainiter: {} samples'.format(len(train)))
+    print('validiter: {} samples'.format(len(valid)))
+    print('testiter: {} samples'.format(len(test)))
 
     # declare optimizer
     estring = "optim." + args.optimizer
     optimizer = eval(estring)(model.parameters(), lr=args.lr)
+    if args.use_scheduler == 1:
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
 
     # modify the dataset to produce labels
     # create a training loop
-    train_loss1 = 0.0
-    train_loss2 = 0.0
-    log_interval=1000
-    log_idx=0
-    bc = 0
+    train_loss = 0.0
+    log_interval = 1000
+    log_idx = 0
+    bc = 0 # bad counter
+    sc = 0 # step counter
     best_valid_loss = None
     savedir = './result/' + args.out_file
     if args.label == 'rcl':
@@ -97,7 +126,7 @@ def train_main(args, neptune):
             idx2class = (pkl.load(fp))['idx2class']
 
     for ei in range(args.max_epoch):
-        for li, (x_data, y_data, end_of_data) in enumerate(trainiter):
+        for li, (x_data, y_data) in enumerate(trainiter):
             x_data = x_data.to(dtype=torch.float32, device=device)
             y_data = y_data.to(dtype=torch.int64, device=device)
 
@@ -111,23 +140,14 @@ def train_main(args, neptune):
 
             # optimizer
             optimizer.step()
-            train_loss1 += loss.item()
-            train_loss2 += loss.item()
+            train_loss += loss.item()
 
-            if end_of_data == 1: break
+        train_loss = train_loss / (li + 1)
+        print('epoch: {:d} | train_loss: {:.4f}'.format(ei+1, train_loss))
+        if neptune is not None: neptune.log_metric('train_loss', ei+1, train_loss)
+        train_loss = 0.0
 
-            if (args.batch_size == 1) and (log_idx % log_interval) == (log_interval - 1):
-                print('{:d} | {:d} | {:.4f}'.format(ei+1, log_idx+1, train_loss1/log_interval))
-                if neptune is not None: neptune.log_metric('train loss (n_samples)', log_idx+1, train_loss1/log_interval)
-                train_loss1 = 0.0
-            log_idx += 1
-
-        train_loss2 = train_loss2 / (li + 1)
-        print('epoch: {:d} | train_loss: {:.4f}'.format(ei+1, train_loss2))
-        if neptune is not None: neptune.log_metric('train_loss2', ei+1, train_loss2)
-        train_loss2 = 0.0
-
-        valid_loss = get_valid_loss(model, validiter, device)
+        valid_loss = get_valid_loss(model, validiter, criterion, device)
         print('epoch: {:d} | valid_loss: {:.4f}'.format(ei+1, valid_loss))
         if neptune is not None: neptune.log_metric('valid_loss', ei+1, valid_loss)
 
@@ -139,8 +159,18 @@ def train_main(args, neptune):
         else:
             bc += 1
             if bc > args.patience:
-                print('early stopping..')
-                break
+                if args.use_scheduler == 1:
+                    print("learning rate decay..")
+                    scheduler.step()
+                    bc = 0
+                    sc += 1
+
+                    if(sc >= args.n_decay):
+                        break
+                else:
+                    print("early stopping..")
+                    break
+
             print('bad counter == %d' % (bc))
 
     model = torch.load(savedir)
@@ -225,6 +255,13 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--patience', type=float)
     parser.add_argument('--max_epoch', type=int)
+    parser.add_argument('--drop_p', type=float)
+
+    # learning rate decay
+    parser.add_argument('--use_scheduler', type=int)
+    parser.add_argument('--step_size', type=int)
+    parser.add_argument('--gamma', type=float)
+    parser.add_argument('--n_decay', type=int, default=3)
 
     args = parser.parse_args()
     params = vars(args)
