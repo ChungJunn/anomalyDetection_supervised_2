@@ -1,8 +1,9 @@
 #!/bin/bash
-EXP_NAME="210619_rnn_clf_ensemble"
+EXP_NAME="210704_ensemble"
 
 # task
 LABEL='sla'
+USE_NEPTUNE=1
 
 # dataset
 DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
@@ -21,7 +22,7 @@ DATA_NAME=$DATASET'_data'
 DIM_FEATURE_MAPPING=24
 
 # enc
-ENCODER='rnn'
+ENCODER=$3
 NLAYER=2
 ## DNN-enc
 DIM_ENC=-1
@@ -29,12 +30,11 @@ DIM_ENC=-1
 BIDIRECTIONAL=1
 DIM_LSTM_HIDDEN=20
 ## transformer-enc
-NHEAD=-1
-DIM_FEEDFORWARD=-1
+NHEAD=4
+DIM_FEEDFORWARD=48
 
 # readout
-REDUCE='mean' # mean, max, or self-attention
-DIM_ATT=-1
+REDUCE=$4 # mean, max, or self-attention
 
 # clf
 CLASSIFIER='rnn' # dnn or rnn
@@ -57,12 +57,16 @@ LR=0.001
 DROP_P=0.0
 BATCH_SIZE=64
 PATIENCE=10
+MAX_EPOCHS=$5
 
 # ensemble parameters
-N_ESTIMATORS=$3
+N_ESTIMATORS=$6
 
 export CUDA_VISIBLE_DEVICES=$1
+for i in 1 2 3
+do
     /usr/bin/python3.8 ad_ensemble_train.py \
+                        --use_neptune=$USE_NEPTUNE \
                         --reduce=$REDUCE \
                         --optimizer=$OPTIMIZER \
                         --lr=$LR \
@@ -79,7 +83,6 @@ export CUDA_VISIBLE_DEVICES=$1
                         --dim_input=$DIM_INPUT \
                         --encoder=$ENCODER \
                         --classifier=$CLASSIFIER \
-                        --dim_att=$DIM_ATT \
                         --dim_enc=$DIM_ENC \
                         --clf_n_lstm_layers=$CLF_N_LSTM_LAYERS \
                         --clf_n_fc_layers=$CLF_N_FC_LAYERS \
@@ -94,6 +97,8 @@ export CUDA_VISIBLE_DEVICES=$1
                         --label=$LABEL \
                         --dict_path=$DICT_PATH \
                         --n_estimators=$N_ESTIMATORS \
-                        --drop_p=$DROP_P
-                        
+                        --drop_p=$DROP_P \
+                        --max_epochs=$MAX_EPOCHS
+done
+
 exit 0

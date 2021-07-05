@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='210618.rnn_clf_ensemble'
+EXP_NAME='210701.ni_meeting_jointTraining'
 
 # task
 LABEL='sla'
@@ -29,11 +29,10 @@ DATA_NAME1=$DATASET1'_data'
 DATA_NAME2=$DATASET2'_data'
 
 # fm
-USE_FEATURE_MAPPING=1
 DIM_FEATURE_MAPPING=24
 
 # enc
-ENCODER='rnn'
+ENCODER=$2
 NLAYER=2
 ## DNN-enc
 DIM_ENC=-1
@@ -41,12 +40,11 @@ DIM_ENC=-1
 BIDIRECTIONAL=1
 DIM_LSTM_HIDDEN=20
 ## transformer-enc
-NHEAD=-1
-DIM_FEEDFORWARD=-1
+NHEAD=4
+DIM_FEEDFORWARD=48
 
 # readout
-REDUCE='mean' # mean, max, or self-attention
-DIM_ATT=-1
+REDUCE=$3 # mean, max, or self-attention
 
 # clf
 CLASSIFIER='rnn' # dnn or rnn
@@ -79,8 +77,8 @@ N_DECAY=3
 export NEPTUNE_API_TOKEN="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJjZDBmMTBmOS0zZDJjLTRkM2MtOTA0MC03YmQ5OThlZTc5N2YifQ=="
 export CUDA_VISIBLE_DEVICES=$1
 
-# for i in 1 2 3
-# do
+for i in 1 2 3
+do
     /usr/bin/python3.8 ad_joint_train.py \
                         --reduce=$REDUCE \
                         --optimizer=$OPTIMIZER \
@@ -100,7 +98,6 @@ export CUDA_VISIBLE_DEVICES=$1
                         --dim_input=$DIM_INPUT \
                         --encoder=$ENCODER \
                         --classifier=$CLASSIFIER \
-                        --dim_att=$DIM_ATT \
                         --dim_enc=$DIM_ENC \
                         --clf_n_lstm_layers=$CLF_N_LSTM_LAYERS \
                         --clf_n_fc_layers=$CLF_N_FC_LAYERS \
@@ -124,6 +121,6 @@ export CUDA_VISIBLE_DEVICES=$1
                         --gamma=$GAMMA \
                         --n_decay=$N_DECAY \
                         --drop_p=$DROP_P
-# done
+done
 
 exit 0

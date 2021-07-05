@@ -18,21 +18,12 @@ import os
 import argparse
 import neptune
 
+from ad_utils import call_model
 from ad_model import RNN_enc_RNN_clf, Transformer_enc_RNN_clf
-from ad_data import AD_SUP2_RNN_ITERATOR2, TPI_RNN_Dataset
+from ad_data import AD_SUP2_RNN_ITERATOR2, AD_RNN_Dataset
 from ad_test import eval_forward, eval_binary, get_valid_loss, log_neptune
 
 from sklearn.metrics import classification_report
-
-def call_model(args, device):
-    if args.encoder == 'rnn' and args.classifier == 'rnn':
-        model = RNN_enc_RNN_clf(args)
-    elif args.encoder == 'transformer' and args.classifier == 'rnn':
-        model = Transformer_enc_RNN_clf(args)
-
-    model = model.to(device)
-
-    return model
 
 def train_main(args, neptune):
     device = torch.device('cuda')
@@ -45,21 +36,21 @@ def train_main(args, neptune):
         test_dnn = True
 
     if args.dataset == "cnsm_exp1" or args.dataset == "cnsm_exp2_1" or args.dataset == "cnsm_exp2_2":
-        train = TPI_RNN_Dataset(mode="train",
+        train = AD_RNN_Dataset(mode="train",
                                 csv_path=args.csv_path,
                                 ids_path=args.ids_path,
                                 stat_path=args.stat_path,
                                 data_name=args.data_name,
                                 rnn_len=args.rnn_len,
                                 test_dnn=test_dnn)
-        valid = TPI_RNN_Dataset(mode="valid",
+        valid = AD_RNN_Dataset(mode="valid",
                                 csv_path=args.csv_path,
                                 ids_path=args.ids_path,
                                 stat_path=args.stat_path,
                                 data_name=args.data_name,
                                 rnn_len=args.rnn_len,
                                 test_dnn=test_dnn)
-        test = TPI_RNN_Dataset(mode="test",
+        test = AD_RNN_Dataset(mode="test",
                                 csv_path=args.csv_path,
                                 ids_path=args.ids_path,
                                 stat_path=args.stat_path,
@@ -72,21 +63,21 @@ def train_main(args, neptune):
         test_csv_path = HOME + "/autoregressor/data/raw/tpi_test_data.csv"
         test_stat_path = HOME + "/autoregressor/data/raw/tpi_train_data.csv.stat"
         
-        train = TPI_RNN_Dataset(mode="train",
+        train = AD_RNN_Dataset(mode="train",
                                 csv_path=args.csv_path,
                                 ids_path=args.ids_path,
                                 stat_path=args.stat_path,
                                 data_name=args.data_name,
                                 rnn_len=args.rnn_len,
                                 test_dnn=test_dnn)
-        valid = TPI_RNN_Dataset(mode="valid",
+        valid = AD_RNN_Dataset(mode="valid",
                                 csv_path=args.csv_path,
                                 ids_path=args.ids_path,
                                 stat_path=args.stat_path,
                                 data_name=args.data_name,
                                 rnn_len=args.rnn_len,
                                 test_dnn=test_dnn)
-        test = TPI_RNN_Dataset(mode="plot",
+        test = AD_RNN_Dataset(mode="plot",
                                 csv_path=test_csv_path,
                                 ids_path=None,
                                 stat_path=test_stat_path,
@@ -239,7 +230,6 @@ if __name__ == '__main__':
     parser.add_argument('--dim_feedforward', type=int)
     # readout
     parser.add_argument('--reduce', type=str)
-    parser.add_argument('--dim_att', type=int)
 
     # clf
     parser.add_argument('--classifier', type=str)

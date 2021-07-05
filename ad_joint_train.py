@@ -17,19 +17,12 @@ import time
 import argparse
 import neptune
 
-from ad_model import RNN_enc_RNN_clf
+from ad_data import AD_RNN_Dataset
+from ad_utils import call_model
 from ad_data import AD_SUP2_RNN_ITERATOR2
-from ad_test import eval_forward, eval_binary, get_combined_valid_loss, log_neptune
+from ad_test import eval_forward, eval_binary, get_combined_valid_loss, log_neptune, eval_joint_forward
 
 from sklearn.metrics import classification_report
-
-def call_model(args, device):
-    if args.encoder == 'rnn' and args.classifier == 'rnn':
-        model = RNN_enc_RNN_clf(args)
-
-    model = model.to(device)
-
-    return model
 
 def train_main(args, neptune):
     device = torch.device('cuda')
@@ -198,13 +191,13 @@ def train_main(args, neptune):
             dataiter_name = eval('args.dataset' + iter_num)
             dataiter = eval(dataiter_str)
 
-            targets, preds = eval_forward(model, dataiter, device)
+            targets, preds = eval_joint_forward(model, dataiter, device)
 
             # metric
             acc, prec, rec, f1 = eval_binary(targets, preds)
 
             # std and neptune
-            print('{} | acc: {:.4f} | prec: {:.4f} | rec: {:.4f} | f1: {:.4f} |'.format(eval_mode, acc, prec, rec, f1))
+            print('{} | {} | acc: {:.4f} | prec: {:.4f} | rec: {:.4f} | f1: {:.4f} |'.format(dataiter_name, eval_mode, acc, prec, rec, f1))
             if neptune is not None:
                 neptune.set_property(dataiter_name + ' acc', acc)
                 neptune.set_property(dataiter_name + ' prec', prec)
@@ -253,7 +246,6 @@ if __name__ == '__main__':
     parser.add_argument('--dim_feedforward', type=int)
     # readout
     parser.add_argument('--reduce', type=str)
-    parser.add_argument('--dim_att', type=int)
 
     # clf
     parser.add_argument('--classifier', type=str)

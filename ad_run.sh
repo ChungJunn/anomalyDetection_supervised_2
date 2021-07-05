@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='210701.ni_meeting'
+EXP_NAME='210701.ni_meeting_rnn_enc'
 
 # task
 LABEL='sla'
@@ -29,16 +29,15 @@ STAT_PATH=$CSV_PATH'.stat'
 DATA_NAME=$DATASET'_data'
 
 # fm
-USE_FEATURE_MAPPING=1
 DIM_FEATURE_MAPPING=24
 
 # enc
-ENCODER='transformer'
+ENCODER='rnn'
 NLAYER=2
 ## DNN-enc
 DIM_ENC=-1
 ## RNN-enc
-BIDIRECTIONAL=-1
+BIDIRECTIONAL=1
 DIM_LSTM_HIDDEN=20
 ## transformer-enc
 NHEAD=4
@@ -46,7 +45,6 @@ DIM_FEEDFORWARD=48
 
 # readout
 REDUCE=$3 # mean, max, or self-attention
-DIM_ATT=40
 
 # clf
 CLASSIFIER='rnn' # dnn or rnn
@@ -99,7 +97,6 @@ do
                         --dim_input=$DIM_INPUT \
                         --encoder=$ENCODER \
                         --classifier=$CLASSIFIER \
-                        --dim_att=$DIM_ATT \
                         --dim_enc=$DIM_ENC \
                         --clf_n_lstm_layers=$CLF_N_LSTM_LAYERS \
                         --clf_n_fc_layers=$CLF_N_FC_LAYERS \

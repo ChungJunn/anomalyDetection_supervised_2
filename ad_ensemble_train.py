@@ -12,15 +12,12 @@ import sys
 import time
 
 import argparse
+import neptune.new as neptune
 
-from ad_model import RNN_enc_RNN_clf
+from ad_model import RNN_enc_RNN_clf, Transformer_enc_RNN_clf
 from ad_ensemble_data import AD_RNN_Dataset
 
 from sklearn.metrics import classification_report
-
-import torch
-import torch.nn as nn
-from torch.nn import functional as F
 
 from EnsemblePytorch.torchensemble import VotingClassifier
 from EnsemblePytorch.torchensemble.utils.logging import set_logger
@@ -41,7 +38,7 @@ def sequencify(input, label, ids, rnn_len):
 
     return x_datas, y_datas
 
-def train_main(args):
+def train_main(args, run):
     if args.classifier == 'rnn':
         test_dnn = False
     else:
@@ -92,18 +89,20 @@ def train_main(args):
             estimator_args=estimator_args,
             cuda=True,
         )
-        if args.dataset == 'cnsm_exp2_1':
-            epochs=20
-        else:
-            epochs=10
-
+    elif args.encoder == "transformer" and args.classifier == "rnn":
+        model = VotingClassifier(
+            estimator=Transformer_enc_RNN_clf,
+            n_estimators=args.n_estimators,
+            estimator_args=estimator_args,
+            cuda=True,
+        )
     # Set the optimizer
     model.set_optimizer('Adam', lr=1e-3)
 
     # Train and Evaluate
     model.fit(
         train_loader,
-        epochs=epochs,
+        epochs=args.max_epochs,
         test_loader=valid_loader,
         criterion=criterion,
     )
@@ -118,6 +117,11 @@ def train_main(args):
     f1 = f1_score(test_y, preds)
 
     print('{} | acc: {:.4f} | prec: {:.4f} | rec: {:.4f} | f1: {:.4f} |'.format("test", acc, prec, rec, f1))
+    if run is not None:
+        run["test/acc"] = acc
+        run["test/prec"] = prec
+        run["test/rec"] = rec
+        run["test/f1"] = f1
 
 if __name__ == '__main__':
     import argparse
@@ -126,6 +130,7 @@ if __name__ == '__main__':
     parser.add_argument('--label', type=str)
     # exp_name
     parser.add_argument('--exp_name', type=str)
+    parser.add_argument('--use_neptune', type=str)
     # dataset
     parser.add_argument('--dataset', type=str)
     parser.add_argument('--dim_input', type=int)
@@ -167,11 +172,25 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--patience', type=float)
     parser.add_argument('--drop_p', type=float)
+    parser.add_argument('--max_epochs', type=int)
     
     # ensemble parameter
     parser.add_argument('--n_estimators', type=int)
 
     args = parser.parse_args()
-    params = vars(args)
+    config = vars(args)
+    print('------------ Options -------------')
+    for k, v in sorted(config.items()):
+        print('%s: %s' % (str(k), str(v)))
+    print('-------------- End ----------------')
 
-    train_main(args)
+    if args.use_neptune == 0:
+        run = None
+    else:
+        run = neptune.init(project='cjlee/apnoms2021',
+                        name=args.exp_name,
+                        api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJjZDBmMTBmOS0zZDJjLTRkM2MtOTA0MC03YmQ5OThlZTc5N2YifQ==') # your credentials
+    run["sys/name"]
+    run["parameters"] = config
+
+    train_main(args, run)

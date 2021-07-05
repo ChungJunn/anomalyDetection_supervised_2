@@ -23,3 +23,9 @@ temp*
 libs/__pycache__/*
 210701*.sh
 EnsemblePytorch/*
+plot_cnsm_exp1/*
+plot_cnsm_exp2_1/*
+plot_cnsm_exp2_2/*
+210705*.sh
+210629*.sh
+.neptune/*

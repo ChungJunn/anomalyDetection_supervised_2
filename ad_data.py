@@ -152,7 +152,7 @@ class AD_SUP2_RNN_ITERATOR2:
 
         return x_data, y_data, end_of_data
 
-class TPI_RNN_Dataset(Dataset):
+class AD_RNN_Dataset(Dataset):
     def __init__(self, mode, csv_path, ids_path, stat_path, data_name, rnn_len, test_dnn):
          # load csv, ids
         df_data = pd.read_csv(csv_path)

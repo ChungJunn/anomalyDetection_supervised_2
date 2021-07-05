@@ -7,6 +7,40 @@ from sklearn.metrics import classification_report
 
 from ad_data import AD_SUP2_RNN_ITERATOR2
 
+def eval_joint_forward(model, dataiter, device):
+    model.eval()
+
+    preds = []
+    targets = []
+    clf_hidden = None
+
+    # forward the whole dataset and obtain result
+    for li, (xs, ys, end_of_data) in enumerate(dataiter):
+        xs = xs.to(dtype=torch.float32, device=device)
+        ys = ys.to(dtype=torch.int64, device=device)
+
+        #outs, clf_hidden = model(anno, clf_hidden)
+        outs = model(xs)
+
+        outs = outs.detach().cpu().numpy()
+        ys = ys.detach().cpu().numpy().reshape(-1,1)
+
+        preds.append(outs)
+        targets.append(ys)
+
+        if end_of_data == 1:
+            break
+
+    # obtain results using metrics
+    preds = np.vstack(preds)
+    targets = np.vstack(targets)
+
+    preds = np.argmax(preds, axis=1)
+
+    model.train()
+
+    return targets, preds
+
 def eval_forward(model, dataiter, device):
     model.eval()
 

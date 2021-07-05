@@ -8,7 +8,7 @@ from torch.nn import TransformerEncoderLayer, TransformerEncoder
 from libs.layers import PositionalEncoding
 
 class RNN_encoder(nn.Module):
-    def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, dim_feature_mapping, nlayer, dim_att):
+    def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, dim_feature_mapping, nlayer):
         super(RNN_encoder, self).__init__()
         self.reduce = reduce
         self.dim_feature_mapping = dim_feature_mapping
@@ -18,8 +18,10 @@ class RNN_encoder(nn.Module):
         # encoder layer
         if bidirectional == 1:
             self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden, bidirectional=True, num_layers=nlayer)
+            dim_att = dim_lstm_hidden * 2
         else:
             self.lstm_layer=nn.LSTM(input_size=dim_lstm_input, hidden_size=dim_lstm_hidden, bidirectional=False, num_layers=nlayer)
+            dim_att = dim_lstm_hidden
 
         # readout
         if self.reduce == 'max' or self.reduce == 'mean':
@@ -201,8 +203,7 @@ class RNN_enc_RNN_clf(nn.Module): # RNN-enc + RNN classifier
                                  reduce = args.reduce,
                                  bidirectional = args.bidirectional,
                                  dim_feature_mapping = args.dim_feature_mapping,
-                                 nlayer = args.nlayer,
-                                 dim_att = args.dim_att)
+                                 nlayer = args.nlayer)
 
         # classifier
         self.classifier=RNN_classifier(dim_input = clf_dim_input,
