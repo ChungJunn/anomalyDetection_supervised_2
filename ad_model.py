@@ -129,6 +129,28 @@ class Transformer_encoder(nn.Module):
 
         return enc_out # (Bn, Tx, D)
 
+class DNN_classifier(nn.Module):
+    def __init__(self, dim_input, n_fc_layers, dim_fc_hidden, drop_p, dim_output):
+        super(DNN_classifier, self).__init__()
+
+        fc_layers = []
+        if n_fc_layers == 0:
+            fc_layers += [nn.Linear(dim_input, dim_output)]
+        else:
+            fc_layers += [nn.Linear(dim_input, dim_fc_hidden), nn.ReLU(), nn.Dropout(p=drop_p)]
+            for i in range(n_fc_layers-1):
+               fc_layers +=[nn.Linear(dim_fc_hidden, dim_fc_hidden), nn.ReLU(), nn.Dropout(p=drop_p)]
+            fc_layers += [nn.Linear(dim_fc_hidden, dim_output)]
+
+        self.fc = nn.Sequential(*fc_layers)
+
+    def forward(self, x): # x: (Bn x Tx x D)
+
+        x = self.fc(x)
+
+        return x
+        #return F.log_softmax(x, dim=2), hidden
+
 class RNN_classifier(nn.Module):
     def __init__(self, dim_input, n_lstm_layers, n_fc_layers, dim_lstm_hidden, dim_fc_hidden, drop_p, dim_output):
         super(RNN_classifier, self).__init__()
@@ -156,6 +178,33 @@ class RNN_classifier(nn.Module):
 
         return x, hidden
         #return F.log_softmax(x, dim=2), hidden
+
+class Transformer_enc_DNN_clf(nn.Module):
+    def __init__(self, args):
+        super(Transformer_enc_DNN_clf, self).__init__()
+
+        self.encoder = Transformer_encoder(dim_input=args.dim_input, 
+                                           nhead=args.nhead, 
+                                           dim_feedforward=args.dim_feedforward,
+                                           reduce=args.reduce,
+                                           dim_feature_mapping=args.dim_feature_mapping,
+                                           nlayer=args.nlayer)
+        
+        self.classifier = DNN_classifier(dim_input=args.dim_feature_mapping,
+                                         n_fc_layers=args.clf_n_fc_layers,
+                                         dim_fc_hidden=args.clf_dim_fc_hidden,
+                                         drop_p=args.drop_p,
+                                         dim_output=args.clf_dim_output)
+    
+    def forward(self, x, clf_hidden=None): # (Bn, V, D)
+        # encoder
+        x = self.encoder(x) # (Bn, Tx, dim_hidden) 
+
+        x = x.squeeze()
+
+        logits = self.classifier(x) # (V, 1, D)
+
+        return logits
 
 class Transformer_enc_RNN_clf(nn.Module):
     def __init__(self, args):

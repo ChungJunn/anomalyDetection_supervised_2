@@ -257,7 +257,7 @@ class AD_RNN_Dataset(Dataset):
         y_data = self.label[idx]
 
         if self.test_dnn == True:
-            x_data = x_data[-1,:,:] # (Bn x V x D)
+            x_data = x_data[-1:,:,:] # (Bn x V x D)
 
         return x_data, y_data
 

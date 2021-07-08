@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME='210701.ni_meeting_rnn_enc'
+EXP_NAME="210708.train_for_comparison"
 
 # task
 LABEL='sla'
@@ -32,7 +32,7 @@ DATA_NAME=$DATASET'_data'
 DIM_FEATURE_MAPPING=24
 
 # enc
-ENCODER='rnn'
+ENCODER='transformer'
 NLAYER=2
 ## DNN-enc
 DIM_ENC=-1
@@ -44,10 +44,10 @@ NHEAD=4
 DIM_FEEDFORWARD=48
 
 # readout
-REDUCE=$3 # mean, max, or self-attention
+REDUCE="self-attention" # mean, max, or self-attention
 
 # clf
-CLASSIFIER='rnn' # dnn or rnn
+CLASSIFIER='dnn' # dnn or rnn
 CLF_N_LSTM_LAYERS=1
 CLF_N_FC_LAYERS=3
 CLF_DIM_LSTM_HIDDEN=200
@@ -77,8 +77,8 @@ N_DECAY=3
 export NEPTUNE_API_TOKEN="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJjZDBmMTBmOS0zZDJjLTRkM2MtOTA0MC03YmQ5OThlZTc5N2YifQ=="
 export CUDA_VISIBLE_DEVICES=$1
 
-for i in 1 2 3
-do
+# for i in 1 2 3
+# do
     /usr/bin/python3.8 ad_main.py \
                         --reduce=$REDUCE \
                         --optimizer=$OPTIMIZER \
@@ -116,6 +116,6 @@ do
                         --gamma=$GAMMA \
                         --n_decay=$N_DECAY \
                         --drop_p=$DROP_P
-done
+# done
 
 exit 0

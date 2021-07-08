@@ -13,7 +13,6 @@ import time
 
 import argparse
 import neptune.new as neptune
-
 from ad_model import RNN_enc_RNN_clf, Transformer_enc_RNN_clf
 from ad_ensemble_data import AD_RNN_Dataset
 
@@ -122,7 +121,6 @@ def train_main(args, run):
         run["test/prec"] = prec
         run["test/rec"] = rec
         run["test/f1"] = f1
-
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
