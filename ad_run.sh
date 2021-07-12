@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME="210708.train_for_comparison"
+EXP_NAME="210710.add_none_encoder_models_testing"
 
 # task
 LABEL='sla'
@@ -30,9 +30,8 @@ DATA_NAME=$DATASET'_data'
 
 # fm
 DIM_FEATURE_MAPPING=24
-
 # enc
-ENCODER='transformer'
+ENCODER="none"
 NLAYER=2
 ## DNN-enc
 DIM_ENC=-1
@@ -42,12 +41,11 @@ DIM_LSTM_HIDDEN=20
 ## transformer-enc
 NHEAD=4
 DIM_FEEDFORWARD=48
-
 # readout
 REDUCE="self-attention" # mean, max, or self-attention
 
 # clf
-CLASSIFIER='dnn' # dnn or rnn
+CLASSIFIER=$3 # dnn or rnn
 CLF_N_LSTM_LAYERS=1
 CLF_N_FC_LAYERS=3
 CLF_DIM_LSTM_HIDDEN=200
@@ -77,8 +75,8 @@ N_DECAY=3
 export NEPTUNE_API_TOKEN="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJjZDBmMTBmOS0zZDJjLTRkM2MtOTA0MC03YmQ5OThlZTc5N2YifQ=="
 export CUDA_VISIBLE_DEVICES=$1
 
-# for i in 1 2 3
-# do
+for i in 1 2 3
+do
     /usr/bin/python3.8 ad_main.py \
                         --reduce=$REDUCE \
                         --optimizer=$OPTIMIZER \
@@ -116,6 +114,6 @@ export CUDA_VISIBLE_DEVICES=$1
                         --gamma=$GAMMA \
                         --n_decay=$N_DECAY \
                         --drop_p=$DROP_P
-# done
+done
 
 exit 0

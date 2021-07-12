@@ -4,6 +4,7 @@ import pickle as pkl
 import torch
 from torch.utils.data import Dataset
 import sys
+from ad_utils import get_const
 
 class AD_SUP2_RNN_ITERATOR2:
     def __init__(self, mode, csv_path, ids_path, stat_path, dict_path, data_name, batch_size, rnn_len, test_dnn, label):
@@ -75,17 +76,9 @@ class AD_SUP2_RNN_ITERATOR2:
         self.data /= np.expand_dims(self.x_std, axis=0)
 
         # split to nodes
-        if data_name == 'cnsm_exp1_data':
-            vnfs = ['fw', 'ids', 'flowmon', 'dpi', 'lb']
-            self.n_nodes = 5
-            self.n_features = 23
-        elif data_name == 'cnsm_exp2_1_data' or data_name == 'cnsm_exp2_2_data':
-            vnfs = ['fw', 'flowmon', 'dpi', 'ids']
-            self.n_nodes = 4
-            self.n_features = 23
-        else:
-            print('data_name must be cnsm_exp1_data, cnsm_exp2_1_data, or cnsm_exp2_2_data')
-            import sys; sys.exit(-1)
+        n_nodes, n_features = get_const(data_name)
+        self.n_nodes = n_nodes
+        self.n_features = n_features
 
         # prepare lists
         label_col = "SLA_Label"
@@ -207,24 +200,11 @@ class AD_RNN_Dataset(Dataset):
         
         self.data -= np.expand_dims(self.x_avg, axis=0)
         self.data /= np.expand_dims(self.x_std, axis=0)
-        
-        # split to nodes
-        if data_name == 'cnsm_exp1_data':
-            vnfs = ['fw', 'ids', 'flowmon', 'dpi', 'lb']
-            self.n_nodes = 5
-            self.n_features = 23
-        elif data_name == 'cnsm_exp2_1_data' or data_name == 'cnsm_exp2_2_data':
-            vnfs = ['fw', 'flowmon', 'dpi', 'ids']
-            self.n_nodes = 4
-            self.n_features = 23
-        elif data_name == "tpi_train_data":
-            vnfs = ['fw', 'flowmon', 'dpi', 'ids', 'lb']
-            self.n_nodes = 5
-            self.n_features = 6
-        else:
-            print('data_name must be cnsm_exp1_data, cnsm_exp2_1_data, cnsm_exp2_2_data, or tpi_train_data')
-            import sys; sys.exit(-1)
 
+        n_nodes, n_features = get_const(data_name)
+        self.n_nodes = n_nodes
+        self.n_features = n_features
+        
         # prepare lists
         label_col = "SLA_Label"
         datas = []

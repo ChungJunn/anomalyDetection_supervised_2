@@ -29,3 +29,4 @@ plot_cnsm_exp2_2/*
 210705*.sh
 210629*.sh
 .neptune/*
+plot_*

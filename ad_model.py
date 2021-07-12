@@ -6,6 +6,7 @@ import sys
 from torch.autograd import Variable
 from torch.nn import TransformerEncoderLayer, TransformerEncoder
 from libs.layers import PositionalEncoding
+from ad_utils import get_const
 
 class RNN_encoder(nn.Module):
     def __init__(self, dim_input, dim_lstm_hidden, reduce, bidirectional, dim_feature_mapping, nlayer):
@@ -270,6 +271,46 @@ class RNN_enc_RNN_clf(nn.Module): # RNN-enc + RNN classifier
 
         logits, clf_hidden = self.classifier(x, clf_hidden) # (V, 1, D)
         logits = logits[-1,:,:] # (1, dim_out)
+
+        return logits
+
+class None_enc_DNN_clf(DNN_classifier):
+    def __init__(self, args):
+        n_nodes, n_features = get_const(args.data_name)
+        super(None_enc_DNN_clf, self).__init__(dim_input=args.dim_input * n_nodes, 
+                                               n_fc_layers=args.clf_n_fc_layers,
+                                               dim_fc_hidden=args.clf_dim_fc_hidden,
+                                               drop_p=args.drop_p,
+                                               dim_output=args.clf_dim_output)
+    
+    def forward(self, x): # Bn Tx V D
+        Bn, Tx, V, D = x.size()
+        x = x[:,-1,:,:].view(Bn, V*D)
+
+        out = self.fc(x)
+
+        return out
+
+class None_enc_RNN_clf(RNN_classifier):
+    def __init__(self, args):
+        n_nodes, n_features = get_const(args.data_name)
+        super(None_enc_RNN_clf, self).__init__(dim_input=args.dim_input * n_nodes, 
+                                               n_lstm_layers=args.clf_n_lstm_layers,
+                                               n_fc_layers=args.clf_n_fc_layers,
+                                               dim_lstm_hidden=args.clf_dim_lstm_hidden,
+                                               dim_fc_hidden=args.clf_dim_fc_hidden,
+                                               drop_p=args.drop_p,
+                                               dim_output=args.clf_dim_output)
+
+    def forward(self, x, clf_hidden=None):
+        # encoder
+        Bn, Tx, V, D = x.size()
+        x = torch.transpose(x, 0, 1).contiguous() # Tx, Bn, V, D
+        x = x.view(Tx, Bn, V*D)
+        
+        x, clf_hidden = self.rnn(x, clf_hidden) # Bn, Tx, D
+        logits = self.fc(x)
+        logits = logits[-1,:,:] # (Bn, 2)
 
         return logits
 

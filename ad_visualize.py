@@ -50,6 +50,7 @@ if __name__ == '__main__':
     # feature mapping
     parser = argparse.ArgumentParser()
     parser.add_argument('--dim_feature_mapping', type=int)
+    parser.add_argument('--analyze', type=str)
 
     # dataset
     parser.add_argument('--dataset', type=str)
@@ -122,14 +123,21 @@ if __name__ == '__main__':
 
     # split dataset to data and labels
     x_data = data.iloc[:, :-3]
-    y_data = data.iloc[:, -3]
+    y_data = np.array(data.iloc[:, -3]).astype(np.int64)
 
     n_samples, n_features = x_data.shape
     # given: x_data, y_data
     # output: plot#-#.png x 25
-    len_fig_interval = 10000
+    len_fig_interval = 5000
     n_subplots = 10 
     n_figs = (n_features // n_subplots) + 1 # number of figures for each fig_interval
+
+    if args.analyze == "abnormal":
+        anal_label = 1
+    elif args.analyze == "normal":
+        anal_label = 0
+    else:
+        print("args.analyze must be either normal or abnormal")
 
     for iloop in range((n_samples // len_fig_interval) + 1): # how many figures horizontally? 
         fig_interval = range((len_fig_interval * iloop), min(n_samples, (len_fig_interval * (iloop + 1))))
@@ -164,20 +172,17 @@ if __name__ == '__main__':
                     interval = range(start, end)
                     label = fig_sub_intervals[k][1]
                     
-                    if label == 0:
+                    if label != anal_label:
                         color = 'k'
                         axs[j].scatter(interval, x_data.iloc[interval, col_idx], c=color, s=1)
-                    elif label == 1:
+                    else:
                         for kk in range(start, end):
                             if kk >= len(is_correct):
                                 continue
                             color = "blue" if is_correct[kk] == 1 else "red"
                             axs[j].scatter(kk, x_data.iloc[kk, col_idx], c=color, s=1)
-                    else:
-                        print("error in labels from intervals")
-                        sys.exit(-1)
-
-            savedir = "./plot_" + dataset
+                    
+            savedir = "./plot_" + dataset + "_" + args.classifier + "_" + args.analyze
             if not os.path.exists(savedir):
                 os.mkdir(savedir)
 

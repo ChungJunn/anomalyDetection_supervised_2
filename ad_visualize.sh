@@ -6,7 +6,7 @@ LABEL='sla'
 USE_NEPTUNE=1
 
 # dataset
-DATASET='cnsm_exp1' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 DIM_INPUT=23
 RNN_LEN=16
 
@@ -19,8 +19,11 @@ STAT_PATH=$CSV_PATH'.stat'
 DATA_NAME=$DATASET'_data'
 
 #load model
-EXP_NUM=$2
+EXP_NUM=$4
 LOAD_PATH='./result/AP-'$EXP_NUM'.pth'
+
+# which label to analyze
+ANALYZE=$5
 
 # fm
 DIM_FEATURE_MAPPING=24
@@ -28,7 +31,7 @@ BATCH_SIZE=64
 DROP_P=0
 
 # enc
-ENCODER="rnn"
+ENCODER="transformer"
 NLAYER=2
 ## DNN-enc
 DIM_ENC=-1
@@ -43,7 +46,7 @@ DIM_FEEDFORWARD=48
 REDUCE="mean" # mean, max, or self-attention
 
 # clf
-CLASSIFIER='rnn' # dnn or rnn
+CLASSIFIER=$3 # dnn or rnn
 CLF_N_LSTM_LAYERS=1
 CLF_N_FC_LAYERS=3
 CLF_DIM_LSTM_HIDDEN=200
@@ -78,3 +81,4 @@ export CUDA_VISIBLE_DEVICES=$1
                     --rnn_len=$RNN_LEN \
                     --dict_path=$DICT_PATH \
                     --load_path=$LOAD_PATH \
+                    --analyze=$ANALYZE \
