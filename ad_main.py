@@ -10,6 +10,7 @@ from torch.autograd import Variable
 import numpy as np
 import pickle as pkl
 
+import random
 import math
 import sys
 import time
@@ -20,7 +21,7 @@ import neptune
 
 from ad_utils import call_model
 from ad_model import RNN_enc_RNN_clf, Transformer_enc_RNN_clf
-from ad_data import AD_SUP2_RNN_ITERATOR2, AD_RNN_Dataset
+from ad_data import AD_RNN_Dataset
 from ad_test import eval_forward, eval_binary, get_valid_loss, log_neptune
 
 from sklearn.metrics import classification_report
@@ -118,20 +119,49 @@ def train_main(args, neptune):
 
     for ei in range(args.max_epoch):
         for li, (x_data, y_data) in enumerate(trainiter):
-            x_data = x_data.to(dtype=torch.float32, device=device)
-            y_data = y_data.to(dtype=torch.int64, device=device)
+            loss = 0
+            Bn, Tx, V, D = x_data.size()
+            x_data = x_data.to(dtype=torch.float32, device=device) # Bn Tx V D
+            y_data = y_data.to(dtype=torch.int64, device=device) # Bn Tx 1
+            y_prev = torch.zeros(Bn,1).to(dtype=torch.int64, device=device) # Bn 1
+            clf_hidden = model.init_clf_hidden(Bn, device)
 
-            optimizer.zero_grad()
+            use_teacher_forcing = True if random.random() < args.teacher_forcing_ratio else False
 
-            output = model(x_data)
+            for di in range(Tx):
+                # teacher forcing
+                if use_teacher_forcing: # Bn, V, D
+                    x_t = x_data[:,di,:,:]
+                    y_prev = y_prev.unsqueeze(1).expand(-1,V,-1).contiguous()
 
+                    input_data = torch.cat((x_t, y_prev), dim=-1).unsqueeze(1)
+                    
+                    output, clf_hidden = model(input_data, clf_hidden)
+
+                    loss += criterion(output, y_data[:, di])
+
+                    y_prev = y_data[:, di].unsqueeze(-1)
+                # free running
+                else:
+                    x_t = x_data[:,di,:,:]
+                    y_prev = y_prev.unsqueeze(1).expand(-1,V,-1).contiguous()
+
+                    input_data = torch.cat((x_t, y_prev), dim=-1).unsqueeze(1)
+                    
+                    output, clf_hidden = model(input_data, clf_hidden)
+
+                    loss += criterion(output, y_data[:, di])
+
+                    topv, topi = output.topk(1)
+                    y_prev = topi.detach()  # detach from history as input
+            
             # go through loss function
-            loss = criterion(output, y_data)
+            optimizer.zero_grad()
             loss.backward()
 
             # optimizer
             optimizer.step()
-            train_loss += loss.item()
+            train_loss += (loss.item() / (di + 1))
 
         train_loss = train_loss / (li + 1)
         print('epoch: {:d} | train_loss: {:.4f}'.format(ei+1, train_loss))
@@ -202,6 +232,7 @@ if __name__ == '__main__':
     # task
     parser.add_argument('--label', type=str)
     parser.add_argument('--use_neptune', type=int)
+    parser.add_argument('--teacher_forcing_ratio', type=float)
     # exp_name
     parser.add_argument('--exp_name', type=str)
     # dataset

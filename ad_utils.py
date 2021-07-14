@@ -25,13 +25,13 @@ def get_const(data_name):
     # split to nodes
     if data_name == 'cnsm_exp1_data':
         n_nodes = 5
-        n_features = 23
+        n_features = 23 # label info
     elif data_name == 'cnsm_exp2_1_data' or data_name == 'cnsm_exp2_2_data':
         n_nodes = 4
-        n_features = 23
+        n_features = 23 # label info
     elif data_name == "tpi_train_data":
         n_nodes = 5
-        n_features = 6
+        n_features = 6 # for using label info
     else:
         print('data_name must be cnsm_exp1_data, cnsm_exp2_1_data, cnsm_exp2_2_data, or tpi_train_data')
         import sys; sys.exit(-1)

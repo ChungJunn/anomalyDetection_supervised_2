@@ -1,5 +1,5 @@
 #!/bin/bash
-EXP_NAME="210710.add_none_encoder_models_testing"
+EXP_NAME="210713.use_label_information"
 
 # task
 LABEL='sla'
@@ -10,7 +10,7 @@ DATASET=$2 #cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 
 if [ $DATASET == 'cnsm_exp1' ] || [ $DATASET == 'cnsm_exp2_1' ] || [ $DATASET == 'cnsm_exp2_2' ]
 then
-    DIM_INPUT=23
+    DIM_INPUT=24 # added 1 for label information
 elif [ $DATASET == 'tpi_train' ]
 then
     DIM_INPUT=6
@@ -28,10 +28,12 @@ DICT_PATH=$BASE_DIR''$DATASET'_data/dict.pkl'
 STAT_PATH=$CSV_PATH'.stat'
 DATA_NAME=$DATASET'_data'
 
+# teacher-focring
+TEACHER_FORCING_RATIO=$4
 # fm
 DIM_FEATURE_MAPPING=24
 # enc
-ENCODER="none"
+ENCODER="transformer"
 NLAYER=2
 ## DNN-enc
 DIM_ENC=-1
@@ -113,7 +115,7 @@ do
                         --step_size=$STEP_SIZE \
                         --gamma=$GAMMA \
                         --n_decay=$N_DECAY \
-                        --drop_p=$DROP_P
+                        --drop_p=$DROP_P \
+                        --teacher_forcing_ratio=$TEACHER_FORCING_RATIO
 done
-
 exit 0

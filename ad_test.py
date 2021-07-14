@@ -5,8 +5,6 @@ import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.metrics import classification_report
 
-from ad_data import AD_SUP2_RNN_ITERATOR2
-
 def eval_joint_forward(model, dataiter, device):
     model.eval()
 
@@ -46,27 +44,45 @@ def eval_forward(model, dataiter, device):
 
     preds = []
     targets = []
-    clf_hidden = None
 
     # forward the whole dataset and obtain result
-    for li, (anno, ys) in enumerate(dataiter):
-        anno = anno.to(dtype=torch.float32, device=device)
-        ys = ys.to(dtype=torch.int64, device=device)
+    for li, (x_data, y_data) in enumerate(dataiter):
+        ####
+        Bn, Tx, V, D = x_data.size()
+        x_data = x_data.to(dtype=torch.float32, device=device) # Bn Tx V D
+        y_data = y_data.to(dtype=torch.int64, device=device) # Bn Tx 1
+        y_prev = torch.zeros(Bn,1).to(dtype=torch.int64, device=device) # Bn 1
+        clf_hidden = model.init_clf_hidden(Bn, device)
+        
+        for di in range(Tx):
+            x_t = x_data[:,di,:,:]
+            y_prev = y_prev.unsqueeze(1).expand(-1,V,-1).contiguous()
 
+            input_data = torch.cat((x_t, y_prev), dim=-1).unsqueeze(1)
+            
+            output, clf_hidden = model(input_data, clf_hidden)
+
+            topv, topi = output.topk(1)
+            y_prev = topi.detach()  # detach from history as input
+
+            if di == (Tx - 1):
+                preds.append(topi.detach().cpu().numpy())
+                targets.append(y_data[:, di].unsqueeze(-1).cpu().numpy())
+        ####
+        '''
         #outs, clf_hidden = model(anno, clf_hidden)
-        outs = model(anno)
+        outs = model(x_data)
 
         outs = outs.detach().cpu().numpy()
-        ys = ys.detach().cpu().numpy().reshape(-1,1)
+        y_data = y_data.detach().cpu().numpy().reshape(-1,1)
 
         preds.append(outs)
-        targets.append(ys)
+        targets.append(y_data)
+        '''
 
     # obtain results using metrics
     preds = np.vstack(preds)
     targets = np.vstack(targets)
-
-    preds = np.argmax(preds, axis=1)
 
     model.train()
 
@@ -121,17 +137,32 @@ def get_combined_valid_loss(model, dataiter1, dataiter2, criterion, device):
 def get_valid_loss(model, dataiter, criterion, device):
     model.eval()
     valid_loss = 0.0
+    loss = 0
 
     # forward the whole dataset and obtain result
     for li, (x_data, y_data) in enumerate(dataiter):
-        x_data = x_data.to(dtype=torch.float32, device=device)
-        y_data = y_data.to(dtype=torch.int64, device=device)
+        Bn, Tx, V, D = x_data.size()
+        x_data = x_data.to(dtype=torch.float32, device=device) # Bn Tx V D
+        y_data = y_data.to(dtype=torch.int64, device=device) # Bn Tx 1
+        y_prev = torch.zeros(Bn,1).to(dtype=torch.int64, device=device) # Bn 1
+        clf_hidden = model.init_clf_hidden(Bn, device)
+        
+        for di in range(Tx):
+            x_t = x_data[:,di,:,:]
+            y_prev = y_prev.unsqueeze(1).expand(-1,V,-1).contiguous()
 
-        output = model(x_data)
+            input_data = torch.cat((x_t, y_prev), dim=-1).unsqueeze(1)
+            
+            output, clf_hidden = model(input_data, clf_hidden)
 
-        valid_loss += float(criterion(output, y_data).detach())
-        # valid_loss += criterion(output, y_data)
+            loss += float(criterion(output, y_data[:, di]))
 
+            topv, topi = output.topk(1)
+            y_prev = topi.detach()  # detach from history as input
+
+        valid_loss += (loss / (di + 1))
+        loss = 0
+        
     # obtain results using metrics
     valid_loss /= (li + 1)
 

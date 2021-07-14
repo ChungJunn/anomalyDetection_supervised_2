@@ -171,9 +171,9 @@ class RNN_classifier(nn.Module):
 
         self.fc = nn.Sequential(*fc_layers)
 
-    def forward(self, x, hidden=None): # x: (Bn x Tx x D)
+    def forward(self, x, hidden=None): # x: (Tx, Bn, D)
 
-        x, hidden = self.rnn(x, hidden) # Bn, Tx, D
+        x, hidden = self.rnn(x, hidden) # Tx, Bn, D
 
         x = self.fc(x)
 
@@ -212,6 +212,7 @@ class Transformer_enc_RNN_clf(nn.Module):
         super(Transformer_enc_RNN_clf, self).__init__()
 
         clf_dim_input = args.dim_feature_mapping
+        self.clf_dim_lstm_hidden= args.clf_dim_lstm_hidden
 
         self.encoder = Transformer_encoder(dim_input=args.dim_input, 
                                            nhead=args.nhead, 
@@ -230,13 +231,16 @@ class Transformer_enc_RNN_clf(nn.Module):
     
     def forward(self, x, clf_hidden=None):
         # encoder
-        x = self.encoder(x) # (Bn, Tx, dim_hidden) 
-        x = torch.transpose(x, 0, 1).contiguous() # Tx, Bn, dim_hidden
+        x = self.encoder(x) # (Bn, Tx, D) 
+        x = torch.transpose(x, 0, 1).contiguous() # Tx, Bn, D
 
-        logits, clf_hidden = self.classifier(x, clf_hidden) # (V, 1, D)
-        logits = logits[-1,:,:] # (1, dim_out)
+        logits, clf_hidden = self.classifier(x, clf_hidden) # (1, Bn, D)
+        logits = logits[0] # (1, dim_out)
 
-        return logits
+        return logits, clf_hidden
+    
+    def init_clf_hidden(self, batch_size, device):
+        return (torch.zeros(1, batch_size, self.clf_dim_lstm_hidden, device=device), torch.zeros(1, batch_size, self.clf_dim_lstm_hidden, device=device))
 
 class RNN_enc_RNN_clf(nn.Module): # RNN-enc + RNN classifier
     def __init__(self, args):

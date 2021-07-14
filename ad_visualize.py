@@ -97,7 +97,7 @@ if __name__ == '__main__':
         test_dnn = True
     
     # obtain prediction from model
-    device = torch.device("cuda")
+    device = torch.device("cpu")
 
     # obtain whether prediction is correct
     iter_data = AD_RNN_Dataset(mode="plot",
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     dataiter = torch.utils.data.DataLoader(iter_data, batch_size=args.batch_size, shuffle=False)
     # model = call_model(args, device)
     # call parameters
-    model = torch.load(args.load_path)
+    model = torch.load(args.load_path).to(device)
     
     y_target, y_pred = eval_forward(model, dataiter, device)
     y_target = y_target.squeeze()
@@ -179,7 +179,7 @@ if __name__ == '__main__':
                         for kk in range(start, end):
                             if kk >= len(is_correct):
                                 continue
-                            color = "blue" if is_correct[kk] == 1 else "red"
+                            color = "cyon" if is_correct[kk] == 1 else "red"
                             axs[j].scatter(kk, x_data.iloc[kk, col_idx], c=color, s=1)
                     
             savedir = "./plot_" + dataset + "_" + args.classifier + "_" + args.analyze
